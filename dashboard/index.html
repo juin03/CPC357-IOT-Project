@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motor Health Monitoring Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏭 Smart City Motor Health Monitoring</h1>
+            <p>Real-time predictive maintenance for urban factories (SDG 11)</p>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Temperature</div>
+                <div class="stat-value" id="temperature">--</div>
+                <div class="stat-unit">°C</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Vibration</div>
+                <div class="stat-value" id="vibration">--</div>
+                <div class="stat-unit">m/s²</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">RPM</div>
+                <div class="stat-value" id="rpm">--</div>
+                <div class="stat-unit">rev/min</div>
+            </div>
+
+            <div class="stat-card highlight">
+                <div class="stat-label">Failure Risk</div>
+                <div class="stat-value" id="risk">--</div>
+                <div class="stat-unit">probability</div>
+            </div>
+        </div>
+
+        <div class="chart-section">
+            <h2>Recent Predictions</h2>
+            <div id="predictions-list"></div>
+        </div>
+
+        <footer>
+            <p>Last updated: <span id="last-update">Never</span></p>
+            <p>Total readings: <span id="total-readings">0</span></p>
+        </footer>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <!-- App Script -->
+    <script src="app.js"></script>
+</body>
+</html>
