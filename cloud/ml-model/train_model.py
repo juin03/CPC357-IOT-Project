@@ -1,6 +1,11 @@
 import pickle
 import numpy as np
+import os
 from sklearn.linear_model import LogisticRegression
+
+# Ensure we're saving in the ml-model directory
+script_dir = os.path.dirname(os.path.abspath(__file__))
+model_path = os.path.join(script_dir, "motor_model.pkl")
 
 # Generate synthetic training data
 np.random.seed(42)
@@ -29,9 +34,9 @@ y = np.concatenate([normal_labels, failure_labels])
 model = LogisticRegression()
 model.fit(X, y)
 
-# Save model
-with open("motor_model.pkl", "wb") as f:
+# Save model in the same directory as this script
+with open(model_path, "wb") as f:
     pickle.dump(model, f)
 
-print("✓ Model trained and saved as motor_model.pkl")
+print(f"✓ Model trained and saved at: {model_path}")
 print(f"  Training accuracy: {model.score(X, y):.2%}")
