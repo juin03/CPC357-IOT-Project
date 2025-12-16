@@ -118,13 +118,6 @@ void loop()
     float mean = sum / VIB_SAMPLES;
     vibRMS = sqrt((sumSq / VIB_SAMPLES) - (mean * mean));
 
-    // ----- BUZZER LOGIC DONT USE THIS-----
-    // if (vibRMS > VIB_THRESHOLD) {
-    //   digitalWrite(BUZZER_PIN, HIGH);   // ALARM
-    // } else {
-    //   digitalWrite(BUZZER_PIN, LOW);
-    // }
-
     // ----- DEBUG OUTPUT -----
     Serial.print("Temp: ");
     Serial.print(tempC, 2);
@@ -145,6 +138,16 @@ void loop()
       Serial.print(" | Failure Risk: ");
       Serial.print(failureProbability * 100.0, 1);
       Serial.println(" %");
+
+      // ----- BUZZER BEEP WHEN PROBABILITY > 0.8-----
+      if (failureProbability > 0.8f)
+      {
+        digitalWrite(BUZZER_PIN, HIGH); // ALARM
+      }
+      else
+      {
+        digitalWrite(BUZZER_PIN, LOW);
+      }
     }
     else
     {
