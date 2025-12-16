@@ -11,36 +11,50 @@
         <header>
             <h1>🏭 Smart City Motor Health Monitoring</h1>
             <p>Real-time predictive maintenance for urban factories (SDG 11)</p>
+            <button id="clear-all-btn" class="clear-all-button" title="Clear all sensor data and predictions">
+                🗑️ Clear All Data
+            </button>
         </header>
 
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-label">Temperature</div>
-                <div class="stat-value" id="temperature">--</div>
-                <div class="stat-unit">°C</div>
+        <div class="charts-container">
+            <div class="chart-section">
+                <h2>Temperature Trend</h2>
+                <canvas id="temperatureChart"></canvas>
             </div>
 
-            <div class="stat-card">
-                <div class="stat-label">Vibration</div>
-                <div class="stat-value" id="vibration">--</div>
-                <div class="stat-unit">m/s²</div>
+            <div class="chart-section">
+                <h2>Vibration Trend</h2>
+                <canvas id="vibrationChart"></canvas>
             </div>
 
-            <div class="stat-card">
-                <div class="stat-label">RPM</div>
-                <div class="stat-value" id="rpm">--</div>
-                <div class="stat-unit">rev/min</div>
+            <div class="chart-section">
+                <h2>RPM Trend</h2>
+                <canvas id="rpmChart"></canvas>
             </div>
 
-            <div class="stat-card highlight">
-                <div class="stat-label">Failure Risk</div>
-                <div class="stat-value" id="risk">--</div>
-                <div class="stat-unit">probability</div>
+            <div class="chart-section">
+                <h2>Failure Risk Trend</h2>
+                <canvas id="riskChart"></canvas>
             </div>
         </div>
 
         <div class="chart-section">
+            <h2>All Metrics Combined</h2>
+            <canvas id="combinedChart"></canvas>
+        </div>
+
+        <div class="chart-section">
             <h2>Recent Predictions</h2>
+            <div class="predictions-controls">
+                <input type="text" id="search-input" placeholder="Search by timestamp..." class="search-box">
+                <select id="risk-filter" class="filter-select">
+                    <option value="all">All Risk Levels</option>
+                    <option value="low">Low Risk (< 30%)</option>
+                    <option value="medium">Medium Risk (30-70%)</option>
+                    <option value="high">High Risk (> 70%)</option>
+                </select>
+                <button id="clear-filters" class="clear-btn">Clear Filters</button>
+            </div>
             <div id="predictions-list"></div>
         </div>
 
@@ -53,6 +67,9 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     
     <!-- App Script -->
     <script src="app.js"></script>

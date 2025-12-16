@@ -6,12 +6,15 @@ Real-time web dashboard for visualizing motor sensor data and failure prediction
 
 ## Features
 
-- 📊 Real-time sensor data display (temperature, vibration, RPM)
-- 🔮 Failure probability prediction with color-coded risk levels
-- 📜 Recent predictions history (last 10 readings)
-- 🎨 Responsive gradient design
-- ⚡ Live updates using Firestore real-time listeners
-- 🎯 Auto-refresh when ESP32 sends new data
+- 📊 **Real-time Multi-Line Graphs** - Interactive charts for temperature, vibration, RPM, and failure risk with hover tooltips
+- 📈 **Combined Metrics View** - All sensor data visualized together with multiple Y-axes
+- 🔍 **Search & Filter** - Search predictions by timestamp and filter by risk level (Low/Medium/High)
+- 💳 **Enhanced Predictions Table** - Card-based design showing all sensor readings with each prediction
+- 🗑️ **Clear All Data** - Admin button to wipe all data from the database
+- ⏱️ **Precise Timestamps** - Shows date and time down to the second
+- 🎨 **Modern UI Design** - Gradient backgrounds, smooth animations, and hover effects
+- ⚡ **Live Updates** - Real-time data using Firestore listeners (up to 50 historical points)
+- 📱 **Fully Responsive** - Works perfectly on desktop, tablet, and mobile devices
 
 ## Quick Start
 
@@ -53,9 +56,13 @@ const firebaseConfig = {
 };
 ```
 
-### 3. Firestore Security Rules (Already Set)
+### 3. Firestore Security Rules
 
-Rules are configured at: https://console.firebase.google.com/project/iot-project-481405/firestore/rules
+**IMPORTANT:** To enable the "Clear All Data" button, you need to update your Firestore security rules to allow delete operations.
+
+Go to: https://console.firebase.google.com/project/iot-project-481405/firestore/rules
+
+Update the rules to:
 
 ```javascript
 rules_version = '2';
@@ -64,10 +71,19 @@ service cloud.firestore {
     match /{document=**} {
       allow read: if true;        // Public read access for dashboard
       allow write: if false;      // Only Cloud Run API can write
+      allow delete: if true;      // Allow dashboard to delete data
     }
   }
 }
 ```
+
+**Or deploy rules via CLI:**
+
+```powershell
+firebase deploy --only firestore:rules
+```
+
+The `firestore.rules` file is included in the dashboard folder.
 
 ### 4. Local Development
 
@@ -135,12 +151,41 @@ ESP32 → Cloud Run API → Firestore Database
 
 ## Dashboard Components
 
-### Real-Time Stats Cards
+### Real-Time Interactive Charts
 
-- **Temperature**: Motor surface temperature (°C)
-- **Vibration**: Motor vibration magnitude (m/s²)
-- **RPM**: Rotational speed (rev/min)
-- **Failure Risk**: ML prediction (0-100%)
+**Individual Metric Charts:**
+- 🌡️ **Temperature Chart** - Shows temperature trends over time with hover values
+- 📊 **Vibration Chart** - Displays vibration patterns and anomalies
+- ⚙️ **RPM Chart** - Monitors rotational speed variations
+- ⚠️ **Failure Risk Chart** - ML prediction trends (0-100%)
+
+**Combined Multi-Line Chart:**
+- All metrics on one graph with multiple Y-axes
+- Color-coded lines for easy comparison
+- Smooth animations and interactive tooltips
+- Shows last 50 data points with automatic scrolling
+
+### Search & Filter Controls
+
+- 🔍 **Search Box** - Search predictions by timestamp
+- 🎯 **Risk Filter Dropdown** - Filter by Low/Medium/High risk levels
+- 🧹 **Clear Filters Button** - Reset all filters instantly
+
+### Enhanced Predictions Table
+
+Modern card-based design showing:
+- 🕐 **Timestamp** - Date and time with seconds (24-hour format)
+- 🌡️ **Temperature** - Exact reading in °C with icon
+- 📊 **Vibration** - Exact reading in m/s² with icon
+- ⚙️ **RPM** - Exact reading in rev/min with icon
+- ⚠️ **Failure Risk** - Percentage with color-coded badge
+
+**Table Features:**
+- Scrollable list showing up to 50 predictions
+- Hover effects with card lift animation
+- Custom purple scrollbar
+- "No results" message when filters don't match
+- Color-coded sensor badges with left borders
 
 ### Risk Level Indicators
 
@@ -150,10 +195,19 @@ ESP32 → Cloud Run API → Firestore Database
 
 ### Recent Predictions List
 
-Shows last 10 predictions with:
-- Timestamp
+Shows last 50 predictions with:
+- Timestamp with seconds
+- All sensor readings (Temperature, Vibration, RPM)
 - Failure probability
 - Color-coded risk badge
+- Search and filter capabilities
+
+### Admin Controls
+
+- 🗑️ **Clear All Data Button** - Permanently delete all sensor data and predictions
+  - Double confirmation dialogs for safety
+  - Progress indicator during deletion
+  - Automatic UI reset after completion
 
 ---
 
@@ -161,10 +215,11 @@ Shows last 10 predictions with:
 
 ```
 dashboard/
-├── index.html          # Main page structure
-├── style.css           # Responsive gradient design
-├── app.js              # Firestore connection and real-time logic
+├── index.html          # Main page structure with charts
+├── style.css           # Modern card-based design with animations
+├── app.js              # Chart.js integration and Firestore logic
 ├── firebase.json       # Firebase Hosting configuration
+├── firestore.rules     # Firestore security rules (with delete permission)
 ├── .firebaserc         # Firebase project configuration
 ├── .gitignore          # Git exclusions
 └── README.md           # This file
@@ -175,12 +230,13 @@ dashboard/
 ## Technology Stack
 
 - **Frontend**: HTML5, CSS3, Vanilla JavaScript
+- **Charts**: Chart.js 4.4.0 (real-time multi-line graphs)
 - **Database**: Firebase Firestore (real-time NoSQL)
 - **Hosting**: Firebase Hosting (CDN)
 - **SDK**: Firebase JavaScript SDK v9 (compat mode)
-- **Design**: CSS Grid, Flexbox, Gradient backgrounds
+- **Design**: CSS Grid, Flexbox, Gradient backgrounds, Card-based UI
 
-No frameworks, no build tools - pure simplicity! ✨
+Clean and modern - no frameworks needed! ✨
 
 ---
 
@@ -259,6 +315,19 @@ firebase hosting:rollback
 - Check Firestore Console for data in collections
 - Test Cloud Run API: `curl https://motor-health-api-250203692178.asia-southeast1.run.app/`
 
+### ❌ Clear All Data button not working
+**Solution:**
+- Update Firestore security rules to include `allow delete: if true`
+- Deploy rules: `firebase deploy --only firestore:rules`
+- Check browser console (F12) for permission errors
+
+### ❌ Charts not displaying
+**Solution:**
+- Verify Chart.js library is loading (check browser console)
+- Ensure there's data in Firestore (need at least 1 prediction)
+- Clear browser cache and reload
+- Check for JavaScript errors in console (F12)
+
 ### ❌ Deployment fails
 **Solution:**
 ```powershell
@@ -303,12 +372,17 @@ npx serve
 
 ## Future Enhancements
 
-- [ ] Add Chart.js for historical graphs
+- [x] Chart.js for historical graphs ✅
+- [x] Enhanced table UI with sensor data ✅
+- [x] Search and filter functionality ✅
+- [x] Clear all data feature ✅
 - [ ] Email/SMS alerts for high risk predictions
 - [ ] Export data to CSV
 - [ ] User authentication (Firebase Auth)
 - [ ] Dark mode toggle
 - [ ] Mobile app version (PWA)
+- [ ] Customizable alert thresholds
+- [ ] Data analytics dashboard
 
 ---
 
