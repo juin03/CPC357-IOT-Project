@@ -18,7 +18,9 @@ ESP32 (Sensors) → Cloud Run (ML API) → Firestore (Database)
 ├── ml-model/
 │   ├── train_model.py          # Model training script
 │   └── motor_model.pkl         # Trained logistic regression model
-├── test_cloud.py               # Cloud deployment testing script
+├── test_cloud.py               # API testing with 20 diverse test cases
+├── .env                        # Environment variables (Cloud Run URL)
+├── .env.example                # Environment variables template
 └── README.md
 ```
 
@@ -97,8 +99,27 @@ This command will:
 # Test health check
 curl https://YOUR-SERVICE-URL/ -UseBasicParsing
 
-# Run comprehensive tests
+# Run comprehensive tests (sends 20 diverse test cases)
 python test_cloud.py
+```
+
+**What `test_cloud.py` does:**
+- Generates 20 test cases with varying sensor values
+- Mix of normal (35%), medium risk (35%), and high risk (30%) conditions
+- Sends requests to your Cloud Run API
+- Displays failure probability for each test
+- Shows statistics: min/max/average risk levels
+- Populates Firestore with sample data for dashboard testing
+
+**Example output:**
+```
+📊 Test 1: temp=32.4°C, vib=0.028, rpm=1523 → ✓ 0.0% [LOW]
+📊 Test 2: temp=48.7°C, vib=0.065, rpm=1389 → ✓ 45.3% [MED]
+📊 Test 3: temp=67.2°C, vib=0.112, rpm=1287 → ✓ 99.8% [HIGH]
+...
+✅ Completed 20/20 requests
+📈 Probability range: 0.0% - 100.0%
+📊 Average risk: 42.5%
 ```
 
 ## API Endpoints
