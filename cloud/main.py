@@ -38,7 +38,8 @@ def send_failure_notification(probability, sensor_data):
     }
     
     try:
-        requests.post(url, json=payload, timeout=5)
+        response = requests.post(url, json=payload, timeout=5)
+        print(f"Telegram notification sent: status={response.status_code}, response={response.text[:100]}")
     except Exception as e:
         print(f"Failed to send Telegram notification: {e}")
 
