@@ -24,6 +24,15 @@ ESP32 (Sensors) → Cloud Run (ML API) → Firestore (Database)
 └── README.md
 ```
 
+## Telegram Notifications
+
+The system sends real-time alerts to a Telegram Group when the motor failure probability exceeds **70%**.
+
+### Configuration
+You need to set the following environment variables:
+- `TELEGRAM_BOT_TOKEN`: The API Token from @BotFather
+- `TELEGRAM_CHAT_ID`: The ID of the Telegram Group
+
 ## Setup & Deployment
 
 ### Prerequisites
@@ -84,7 +93,12 @@ gcloud projects add-iam-policy-binding YOUR_PROJECT_ID --member="serviceAccount:
 ### 5. Deploy to Cloud Run
 
 ```powershell
-gcloud run deploy motor-health-api --source . --region asia-southeast1 --allow-unauthenticated --platform managed
+gcloud run deploy motor-health-api `
+  --source . `
+  --region asia-southeast1 `
+  --allow-unauthenticated `
+  --platform managed `
+  --set-env-vars TELEGRAM_BOT_TOKEN="your_token_here",TELEGRAM_CHAT_ID="your_chat_id_here"
 ```
 
 This command will:
@@ -208,7 +222,12 @@ gcloud run logs read motor-health-api --region asia-southeast1
 After making code changes:
 
 ```powershell
-gcloud run deploy motor-health-api --source . --region asia-southeast1 --allow-unauthenticated --platform managed
+gcloud run deploy motor-health-api `
+  --source . `
+  --region asia-southeast1 `
+  --allow-unauthenticated `
+  --platform managed `
+  --set-env-vars TELEGRAM_BOT_TOKEN="your_token_here",TELEGRAM_CHAT_ID="your_chat_id_here"
 ```
 
 ## Clean Up
