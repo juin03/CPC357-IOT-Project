@@ -58,9 +58,14 @@ for idx, test in enumerate(test_cases, 1):
         if response.status_code == 200:
             result = response.json()
             prob = result['failure_probability']
-            risk_level = "LOW" if prob < 0.3 else "MED" if prob < 0.7 else "HIGH"
-            print(f"✓ {prob:.1%} [{risk_level}]")
-            results.append(prob)
+            
+            # Check if error occurred
+            if prob is None and 'error' in result:
+                print(f"✗ API Error: {result['error']}")
+            else:
+                risk_level = "LOW" if prob < 0.3 else "MED" if prob < 0.7 else "HIGH"
+                print(f"✓ {prob:.1%} [{risk_level}]")
+                results.append(prob)
         else:
             print(f"✗ Error: {response.status_code}")
     except Exception as e:
@@ -68,6 +73,52 @@ for idx, test in enumerate(test_cases, 1):
     
     # Small delay to avoid overwhelming the API
     time.sleep(0.5)
+
+# Test 6: Send invalid data to trigger error handling
+print(f"\n📊 Test 6 (Error Test): Sending invalid data to test error handling", end=" → ")
+try:
+    invalid_data = {
+        "temperature": 50.0,
+        "vibration": 0.05,
+        "rpm": 1500,
+        "timestamp": "invalid_timestamp"  # This should cause an error
+    }
+    response = requests.post(url, json=invalid_data)
+    
+    if response.status_code == 200:
+        result = response.json()
+        if 'error' in result and result['failure_probability'] is None:
+            print(f"✓ Error handled correctly: {result['error'][:50]}...")
+        else:
+            print(f"✗ Unexpected success: {result}")
+    elif response.status_code == 422:
+        print(f"✓ Validation error (422): Invalid input caught by Pydantic")
+    else:
+        print(f"✗ Unexpected status: {response.status_code}")
+except Exception as e:
+    print(f"✗ Connection error: {e}")
+
+# Test 7: Send valid types but extreme timestamp to trigger try-except
+print(f"\n📊 Test 7 (Runtime Error Test): Sending extreme timestamp value", end=" → ")
+try:
+    extreme_data = {
+        "temperature": 50.0,
+        "vibration": 0.05,
+        "rpm": 1500,
+        "timestamp": 99999999999999  # Extremely large timestamp, beyond datetime range
+    }
+    response = requests.post(url, json=extreme_data)
+    
+    if response.status_code == 200:
+        result = response.json()
+        if 'error' in result and result['failure_probability'] is None:
+            print(f"✓ Runtime error caught by try-except: {result['error'][:60]}...")
+        else:
+            print(f"✗ Unexpected success: {result}")
+    else:
+        print(f"✗ Unexpected status: {response.status_code}")
+except Exception as e:
+    print(f"✗ Connection error: {e}")
 
 print(f"\n{'='*60}")
 print(f"✅ Completed {len(results)}/{len(test_cases)} requests")
