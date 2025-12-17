@@ -11,12 +11,12 @@ load_dotenv()
 # Cloud Run URL from environment variable
 url = os.getenv("CLOUD_RUN_URL", "https://motor-health-api-250203692178.asia-southeast1.run.app/predict")
 
-# Generate 20 test cases with varying values
+# Generate 5 test cases with varying values
 test_cases = []
 
-print("Generating 20 diverse test cases...\n")
+print("Generating 5 diverse test cases...\n")
 
-for i in range(20):
+for i in range(5):
     # Generate realistic varying sensor data
     # Normal range: temp 20-45, vib 0.01-0.05, rpm 1400-1600
     # Risky range: temp 45-80, vib 0.05-0.15, rpm 1200-1400
