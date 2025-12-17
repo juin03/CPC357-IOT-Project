@@ -19,8 +19,10 @@ ESP32 (Sensors) → Cloud Run (ML API) → Firestore (Database)
 │   ├── train_model.py          # Model training script
 │   └── motor_model.pkl         # Trained logistic regression model
 ├── test_cloud.py               # API testing with 20 diverse test cases
-├── .env                        # Environment variables (Cloud Run URL)
+├── .env                        # Local environment variables (Cloud Run URL)
 ├── .env.example                # Environment variables template
+├── env.yaml                    # Cloud Run environment variables (gitignored)
+├── env.yaml.example            # Template for env.yaml
 └── README.md
 ```
 
@@ -90,7 +92,22 @@ gcloud projects add-iam-policy-binding YOUR_PROJECT_ID --member="serviceAccount:
 gcloud projects add-iam-policy-binding YOUR_PROJECT_ID --member="serviceAccount:PROJECT_NUMBER-compute@developer.gserviceaccount.com" --role="roles/artifactregistry.writer"
 ```
 
-### 5. Deploy to Cloud Run
+### 5. Configure Environment Variables
+
+Create `env.yaml` for Cloud Run deployment:
+
+```powershell
+# Copy the template
+cp env.yaml.example env.yaml
+
+# Edit env.yaml with your credentials
+# TELEGRAM_BOT_TOKEN: "your_bot_token_from_botfather"
+# TELEGRAM_CHAT_ID: "your_group_chat_id"
+```
+
+> ⚠️ **Important**: `env.yaml` is gitignored. Never commit it to version control.
+
+### 6. Deploy to Cloud Run
 
 ```powershell
 gcloud run deploy motor-health-api `
@@ -98,7 +115,7 @@ gcloud run deploy motor-health-api `
   --region asia-southeast1 `
   --allow-unauthenticated `
   --platform managed `
-  --set-env-vars TELEGRAM_BOT_TOKEN="your_token_here",TELEGRAM_CHAT_ID="your_chat_id_here"
+  --env-vars-file env.yaml
 ```
 
 This command will:
@@ -107,7 +124,7 @@ This command will:
 - Deploy to Cloud Run
 - Return a public HTTPS URL
 
-### 6. Test the Deployment
+### 7. Test the Deployment
 
 ```powershell
 # Test health check
@@ -227,7 +244,7 @@ gcloud run deploy motor-health-api `
   --region asia-southeast1 `
   --allow-unauthenticated `
   --platform managed `
-  --set-env-vars TELEGRAM_BOT_TOKEN="your_token_here",TELEGRAM_CHAT_ID="your_chat_id_here"
+  --env-vars-file env.yaml
 ```
 
 ## Clean Up
