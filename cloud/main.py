@@ -59,40 +59,48 @@ class SensorData(BaseModel):
 # ---------- Endpoint ----------
 @app.post("/predict")
 def predict(data: SensorData):
+    try:
+        X = np.array([[ 
+            data.temperature,
+            data.vibration,
+            data.rpm
+        ]])
 
-    X = np.array([[ 
-        data.temperature,
-        data.vibration,
-        data.rpm
-    ]])
+        prob = model.predict_proba(X)[0][1]
 
-    prob = model.predict_proba(X)[0][1]
+        # Store sensor data and get document reference
+        sensor_ref = db.collection("sensor_data").add({
+            "temperature": data.temperature,
+            "vibration": data.vibration,
+            "rpm": data.rpm,
+            "timestamp": datetime.utcfromtimestamp(data.timestamp)
+        })
+        
+        # Get the document ID
+        sensor_doc_id = sensor_ref[1].id
 
-    # Store sensor data and get document reference
-    sensor_ref = db.collection("sensor_data").add({
-        "temperature": data.temperature,
-        "vibration": data.vibration,
-        "rpm": data.rpm,
-        "timestamp": datetime.utcfromtimestamp(data.timestamp)
-    })
+        # Check for high failure probability and send alert
+        if prob > 0.7:
+            send_failure_notification(prob, data)
+
+        # Store prediction with reference to sensor data
+        db.collection("predictions").add({
+            "sensor_data_id": sensor_doc_id,
+            "failure_probability": float(prob),
+            "timestamp": datetime.utcnow()
+        })
+
+        return {
+            "failure_probability": float(prob)
+        }
     
-    # Get the document ID
-    sensor_doc_id = sensor_ref[1].id
-
-    # Check for high failure probability and send alert
-    if prob > 0.7:
-        send_failure_notification(prob, data)
-
-    # Store prediction with reference to sensor data
-    db.collection("predictions").add({
-        "sensor_data_id": sensor_doc_id,
-        "failure_probability": float(prob),
-        "timestamp": datetime.utcnow()
-    })
-
-    return {
-        "failure_probability": float(prob)
-    }
+    except Exception as e:
+        # Return a proper error response
+        print(f"Error in prediction endpoint: {e}")
+        return {
+            "error": str(e),
+            "failure_probability": None
+        }
 
 @app.get("/")
 def health_check():
