@@ -11,6 +11,9 @@
 #define RPM_PIN 25
 #define BUZZER_PIN 26
 
+// ================== POSTING INTERVAL ==================
+#define POST_INTERVAL_MS 5000
+
 // ================== TEMPERATURE ==================
 OneWire oneWire(TEMP_PIN);
 DallasTemperature DS18B20(&oneWire);
@@ -81,8 +84,9 @@ void loop()
   DS18B20.requestTemperatures();
   float tempC = DS18B20.getTempCByIndex(0);
 
-  // -------- RPM + VIBRATION every 1 second --------
-  if (millis() - lastRPMTime >= 1000)
+  // -------- RPM + VIBRATION every POST_INTERVAL_MS --------
+  unsigned long now = millis();
+  if (now - lastRPMTime >= POST_INTERVAL_MS)
   {
 
     // ----- RPM -----
@@ -91,8 +95,12 @@ void loop()
     pulseCount = 0;
     interrupts();
 
-    rpm = pulses * 60.0; // 1 mark per revolution
-    lastRPMTime = millis();
+    unsigned long elapsedMs = now - lastRPMTime;
+    if (elapsedMs == 0)
+      elapsedMs = 1; // safety
+    // Convert pulses over elapsedMs to revolutions per minute (1 pulse = 1 rev)
+    rpm = (pulses * 60000.0f) / (float)elapsedMs;
+    lastRPMTime = now;
 
     // ----- VIBRATION RMS -----
     float sum = 0.0;

@@ -9,7 +9,7 @@ model_path = os.path.join(script_dir, "motor_model.pkl")
 
 # Generate synthetic training data
 np.random.seed(42)
-n_samples = 1000
+n_samples = 2000
 
 # Normal operation: room temp 20-30°C, vibration 0.3-0.6, rpm 2000-3000
 normal_temp = np.random.uniform(20, 30, n_samples // 2)
@@ -19,8 +19,8 @@ normal_labels = np.zeros(n_samples // 2)
 
 # Failure conditions: high temp/vibration, abnormal rpm (too low)
 failure_temp = np.random.uniform(35, 90, n_samples // 2)
-failure_vib = np.random.uniform(0.7, 1.2, n_samples // 2)
-failure_rpm = np.random.uniform(1200, 1800, n_samples // 2)
+failure_vib = np.random.uniform(0.7, 3, n_samples // 2)
+failure_rpm = np.random.uniform(900, 1800, n_samples // 2)
 failure_labels = np.ones(n_samples // 2)
 
 # Combine data
