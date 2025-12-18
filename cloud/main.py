@@ -67,7 +67,24 @@ def predict(data: SensorData):
             data.rpm
         ]])
 
-        prob = model.predict_proba(X)[0][1]
+        raw_prob = model.predict_proba(X)[0][1]
+        
+        # Rolling Window Smoothing (Mean of last 5 data points)
+        # Fetch last 4 predictions to average with current one
+        previous_preds = db.collection("predictions")\
+            .order_by("timestamp", direction=firestore.Query.DESCENDING)\
+            .limit(4)\
+            .get()
+
+        rolling_values = [raw_prob]
+        for doc in previous_preds:
+            p_data = doc.to_dict()
+            # Use raw if available (new schema), otherwise fallback to stored value (old schema)
+            val = p_data.get("raw_failure_probability", p_data.get("failure_probability", 0.0))
+            rolling_values.append(val)
+            
+        # Calculate mean
+        mean_prob = sum(rolling_values) / len(rolling_values)
 
         # Store sensor data and get document reference
         # Use server timestamp to avoid issues with ESP32's relative millis-based timestamps
@@ -81,19 +98,22 @@ def predict(data: SensorData):
         # Get the document ID
         sensor_doc_id = sensor_ref[1].id
 
-        # Check for high failure probability and send alert
-        if prob > 0.7:
-            send_failure_notification(prob, data)
+        # Check for high failure probability and send alert (Use Smoothed Value)
+        if mean_prob > 0.7:
+            send_failure_notification(mean_prob, data)
 
         # Store prediction with reference to sensor data
+        # Store BOTH raw and smoothed probability
         db.collection("predictions").add({
             "sensor_data_id": sensor_doc_id,
-            "failure_probability": float(prob),
+            "failure_probability": float(mean_prob),      # Smoothed value (used by Dashboard)
+            "raw_failure_probability": float(raw_prob),   # Raw value (used for next calculation)
             "timestamp": datetime.utcnow()
         })
 
         return {
-            "failure_probability": float(prob)
+            "failure_probability": float(mean_prob),
+            "raw_failure_probability": float(raw_prob)
         }
     
     except Exception as e:

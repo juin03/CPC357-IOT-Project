@@ -17,26 +17,33 @@ test_cases = []
 print("Generating 5 diverse test cases...\n")
 
 for i in range(5):
-    # Generate realistic varying sensor data
-    # Normal range: temp 20-45, vib 0.01-0.05, rpm 1400-1600
-    # Risky range: temp 45-80, vib 0.05-0.15, rpm 1200-1400
+    # Generate realistic varying sensor data based on train_model.py definitions
     
-    # Mix of normal, borderline, and risky conditions
-    if i < 7:  # 35% normal operation
-        temp = random.uniform(25, 40)
-        vib = random.uniform(0.015, 0.04)
-        rpm = random.uniform(1450, 1580)
-    elif i < 14:  # 35% medium risk
-        temp = random.uniform(40, 55)
-        vib = random.uniform(0.04, 0.08)
-        rpm = random.uniform(1350, 1450)
-    else:  # 30% high risk
-        temp = random.uniform(55, 75)
-        vib = random.uniform(0.08, 0.13)
-        rpm = random.uniform(1220, 1350)
+    # 3 Success Cases (Normal Operation)
+    # Range: Temp 20-30, Vib 0.3-0.6, RPM 2000-3000
+    if i < 3:
+        temp = random.uniform(20, 30)
+        vib = random.uniform(0.3, 0.6)
+        rpm = random.uniform(2000, 3000)
+        case_type = "Normal"
+        
+    # 2 Failure Cases
+    elif i == 3:
+        # Failure B/D: High Vibration and/or Temp
+        temp = random.uniform(40, 60) # High Temp
+        vib = random.uniform(1.5, 3.0) # High Vib
+        rpm = random.uniform(2000, 3000) # Normal RPM
+        case_type = "High Risk (Vib/Temp)"
+        
+    else: # i == 4
+        # Failure C: Low RPM (Stall/Load issue)
+        temp = random.uniform(20, 30) # Normal Temp
+        vib = random.uniform(0.3, 0.6) # Normal Vib
+        rpm = random.uniform(1000, 1800) # Low RPM (< 2000)
+        case_type = "High Risk (Low RPM)"
     
     test_cases.append({
-        "name": f"Test {i+1}",
+        "name": f"Test {i+1} ({case_type})",
         "data": {
             "temperature": round(temp, 1),
             "vibration": round(vib, 3),
