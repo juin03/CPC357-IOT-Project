@@ -70,11 +70,12 @@ def predict(data: SensorData):
         prob = model.predict_proba(X)[0][1]
 
         # Store sensor data and get document reference
+        # Use server timestamp to avoid issues with ESP32's relative millis-based timestamps
         sensor_ref = db.collection("sensor_data").add({
             "temperature": data.temperature,
             "vibration": data.vibration,
             "rpm": data.rpm,
-            "timestamp": datetime.utcfromtimestamp(data.timestamp)
+            "timestamp": datetime.utcnow()
         })
         
         # Get the document ID
