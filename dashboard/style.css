@@ -35,24 +35,91 @@ header p {
     margin-bottom: 20px;
 }
 
-.clear-all-button {
-    padding: 12px 24px;
-    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+/* Header Controls & Status */
+.connection-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 8px 16px;
+    border-radius: 20px;
+    margin-bottom: 20px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.connection-status.online {
+    border: 1px solid #38ef7d;
+}
+
+.connection-status.offline {
+    border: 1px solid #ff6b6b;
+    background: rgba(255, 107, 107, 0.2);
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #ccc;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
+.connection-status.online .status-dot {
+    background-color: #38ef7d;
+    box-shadow: 0 0 8px #38ef7d;
+}
+
+.connection-status.offline .status-dot {
+    background-color: #ff6b6b;
+    box-shadow: 0 0 8px #ff6b6b;
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+.header-controls {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.control-btn {
+    padding: 10px 20px;
     color: white;
     border: none;
     border-radius: 8px;
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
-    margin-top: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.clear-all-button:hover {
-    background: linear-gradient(135deg, #ee5a6f 0%, #ff6b6b 100%);
+.control-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.6);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.control-btn:active {
+    transform: translateY(0);
 }
 
 .clear-all-button:active {
@@ -63,6 +130,83 @@ header p {
     cursor: not-allowed;
     opacity: 0.6;
 }
+
+.control-btn.pause {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.control-btn.pause.paused {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.control-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.15);
+    padding: 5px 12px;
+    border-radius: 8px;
+}
+
+.control-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.control-select {
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: none;
+    background: white;
+    color: #333;
+    font-weight: 600;
+    cursor: pointer;
+    outline: none;
+}
+
+.control-input {
+    width: 60px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: none;
+    background: white;
+    color: #333;
+    font-weight: 600;
+    font-family: inherit;
+    outline: none;
+}
+
+.control-btn.apply {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 6px 15px;
+    font-size: 0.85rem;
+}
+
+.control-btn.export {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    color: #333;
+    /* Darker text for light background */
+}
+
+/* Updated Clear Button Style to match new controls */
+.clear-all-button {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-top: 0;
+    /* Removing top margin as it's now in a flex container */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 
 .latest-reading-box {
     background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
@@ -129,6 +273,8 @@ header p {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
+    /* Added for vertical centering */
     gap: 15px;
     padding: 25px 20px;
     background: white;
@@ -230,13 +376,15 @@ header p {
 .latest-risk-value {
     font-size: 3rem;
     font-weight: 900;
-    padding: 20px 35px;
-    border-radius: 15px;
-    background: white;
+    padding: 10px 0;
+    /* Reduced padding */
+    border-radius: 0;
+    background: transparent;
     color: #333;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    box-shadow: none;
+    /* Removed shadow */
     transition: all 0.3s ease;
-    animation: pulse 2s ease-in-out infinite;
+    /* animation: pulse 2s ease-in-out infinite; Removed per user request */
 }
 
 @keyframes pulse {
@@ -252,18 +400,21 @@ header p {
 }
 
 .latest-risk-value.risk-low {
-    background: linear-gradient(135deg, #38ef7d, #11998e);
-    color: white;
+    background: transparent;
+    color: #38ef7d;
+    /* Text color green */
 }
 
 .latest-risk-value.risk-medium {
-    background: linear-gradient(135deg, #f5576c, #f093fb);
-    color: white;
+    background: transparent;
+    color: #f1c40f;
+    /* Text color yellow */
 }
 
 .latest-risk-value.risk-high {
-    background: linear-gradient(135deg, #fee140, #fa709a);
-    color: #333;
+    background: transparent;
+    color: #fa709a;
+    /* Text color red */
 }
 
 .charts-container {
@@ -514,13 +665,13 @@ header p {
 }
 
 .pred-risk.risk-medium {
-    background: #f5576c;
-    color: white;
+    background: #fee140;
+    color: #333;
 }
 
 .pred-risk.risk-high {
-    background: #fee140;
-    color: #333;
+    background: #f5576c;
+    color: white;
 }
 
 footer {
