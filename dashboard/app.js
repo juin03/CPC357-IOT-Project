@@ -53,7 +53,7 @@ const commonOptions = {
             padding: 12,
             displayColors: true,
             callbacks: {
-                label: function(context) {
+                label: function (context) {
                     let label = context.dataset.label || '';
                     if (label) {
                         label += ': ';
@@ -344,20 +344,20 @@ const combinedChart = new Chart(document.getElementById('combinedChart'), {
 
 // Function to update charts with new data
 function updateCharts(data, timestamp, riskValue) {
-    const timeLabel = new Date(timestamp).toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit', 
+    const timeLabel = new Date(timestamp).toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
         second: '2-digit',
-        hour12: false 
+        hour12: false
     });
-    
+
     // Add new data
     chartData.labels.push(timeLabel);
     chartData.temperature.push(data.temperature);
     chartData.vibration.push(data.vibration);
     chartData.rpm.push(data.rpm);
     chartData.risk.push(riskValue * 100);
-    
+
     // Keep only MAX_POINTS
     if (chartData.labels.length > MAX_POINTS) {
         chartData.labels.shift();
@@ -366,7 +366,7 @@ function updateCharts(data, timestamp, riskValue) {
         chartData.rpm.shift();
         chartData.risk.shift();
     }
-    
+
     // Update all charts
     temperatureChart.update('none');
     vibrationChart.update('none');
@@ -383,9 +383,9 @@ db.collection('sensor_data')
         if (!snapshot.empty) {
             const data = snapshot.docs[0].data();
             const docId = snapshot.docs[0].id;
-            
+
             lastUpdateEl.textContent = new Date().toLocaleString();
-            
+
             // Fetch corresponding prediction
             db.collection('predictions')
                 .where('sensor_data_id', '==', docId)
@@ -394,13 +394,51 @@ db.collection('sensor_data')
                 .then((predSnapshot) => {
                     if (!predSnapshot.empty) {
                         const pred = predSnapshot.docs[0].data();
-                        
+
                         // Update charts with new data
                         updateCharts(data, data.timestamp.toDate(), pred.failure_probability);
+
+                        // Update latest reading box
+                        updateLatestReading(data, pred);
                     }
                 });
         }
     });
+
+// Function to update the latest reading box
+function updateLatestReading(sensorData, predictionData) {
+    const timestamp = sensorData.timestamp.toDate().toLocaleString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+    });
+
+    const probability = (predictionData.failure_probability * 100).toFixed(1);
+    const riskClass = predictionData.failure_probability < 0.3 ? 'low' :
+        predictionData.failure_probability < 0.7 ? 'medium' : 'high';
+
+    // Update sensor values
+    document.getElementById('latest-temp').textContent = `${sensorData.temperature.toFixed(1)}°C`;
+    document.getElementById('latest-vib').textContent = `${sensorData.vibration.toFixed(3)} m/s²`;
+    document.getElementById('latest-rpm').textContent = `${sensorData.rpm.toFixed(0)} rev/min`;
+
+    // Update timestamp
+    document.getElementById('latest-timestamp').textContent = timestamp;
+
+    // Update risk prediction with color coding
+    const riskValueEl = document.getElementById('latest-risk');
+    riskValueEl.textContent = `${probability}%`;
+
+    // Remove existing risk classes
+    riskValueEl.classList.remove('risk-low', 'risk-medium', 'risk-high');
+    // Add new risk class
+    riskValueEl.classList.add(`risk-${riskClass}`);
+}
+
 
 // Load historical data on startup
 db.collection('sensor_data')
@@ -409,51 +447,63 @@ db.collection('sensor_data')
     .get()
     .then((snapshot) => {
         const historicalData = [];
-        
+
         snapshot.forEach((doc) => {
             historicalData.push({
                 id: doc.id,
                 ...doc.data()
             });
         });
-        
+
         // Reverse to get chronological order
         historicalData.reverse();
-        
+
         // Fetch predictions for each sensor data point
-        const predictionPromises = historicalData.map((data) => 
+        const predictionPromises = historicalData.map((data) =>
             db.collection('predictions')
                 .where('sensor_data_id', '==', data.id)
                 .limit(1)
                 .get()
         );
-        
+
         return Promise.all(predictionPromises).then((predSnapshots) => {
+            let latestData = null;
+            let latestPred = null;
+
             historicalData.forEach((data, index) => {
                 const predSnapshot = predSnapshots[index];
                 if (!predSnapshot.empty) {
                     const pred = predSnapshot.docs[0].data();
-                    const timeLabel = new Date(data.timestamp.toDate()).toLocaleTimeString('en-US', { 
-                        hour: '2-digit', 
-                        minute: '2-digit', 
+                    const timeLabel = new Date(data.timestamp.toDate()).toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit',
                         second: '2-digit',
-                        hour12: false 
+                        hour12: false
                     });
-                    
+
                     chartData.labels.push(timeLabel);
                     chartData.temperature.push(data.temperature);
                     chartData.vibration.push(data.vibration);
                     chartData.rpm.push(data.rpm);
                     chartData.risk.push(pred.failure_probability * 100);
+
+                    // Store the latest data (last one in chronological order)
+                    latestData = data;
+                    latestPred = pred;
                 }
             });
-            
+
             // Update all charts
             temperatureChart.update();
             vibrationChart.update();
             rpmChart.update();
             riskChart.update();
             combinedChart.update();
+
+            // Update latest reading box with most recent data
+            if (latestData && latestPred) {
+                updateLatestReading(latestData, latestPred);
+            }
         });
     })
     .catch((error) => {
@@ -469,14 +519,14 @@ db.collection('predictions')
     .limit(50)
     .onSnapshot((snapshot) => {
         totalReadingsEl.textContent = snapshot.size;
-        
+
         // Store all predictions with their IDs
         allPredictions = [];
         const promises = [];
-        
+
         snapshot.forEach((doc) => {
             const predData = doc.data();
-            
+
             // Fetch corresponding sensor data
             const promise = db.collection('sensor_data')
                 .doc(predData.sensor_data_id)
@@ -490,14 +540,14 @@ db.collection('predictions')
                         });
                     }
                 });
-            
+
             promises.push(promise);
         });
-        
+
         // Wait for all sensor data to be fetched
         Promise.all(promises).then(() => {
             // Sort by timestamp
-            allPredictions.sort((a, b) => 
+            allPredictions.sort((a, b) =>
                 b.prediction.timestamp.toDate() - a.prediction.timestamp.toDate()
             );
             displayPredictions(allPredictions);
@@ -507,12 +557,12 @@ db.collection('predictions')
 // Display predictions
 function displayPredictions(predictions) {
     predictionsList.innerHTML = '';
-    
+
     if (predictions.length === 0) {
         predictionsList.innerHTML = '<div class="no-results">No predictions found</div>';
         return;
     }
-    
+
     predictions.forEach((item) => {
         const predItem = createPredictionItem(item.prediction, item.sensor);
         predictionsList.appendChild(predItem);
@@ -527,11 +577,11 @@ const clearFiltersBtn = document.getElementById('clear-filters');
 function applyFilters() {
     const searchTerm = searchInput.value.toLowerCase();
     const riskLevel = riskFilter.value;
-    
+
     let filtered = allPredictions.filter((item) => {
         const timestamp = item.prediction.timestamp.toDate().toLocaleString().toLowerCase();
         const matchesSearch = searchTerm === '' || timestamp.includes(searchTerm);
-        
+
         let matchesRisk = true;
         if (riskLevel !== 'all') {
             const probability = item.prediction.failure_probability;
@@ -543,10 +593,10 @@ function applyFilters() {
                 matchesRisk = probability > 0.7;
             }
         }
-        
+
         return matchesSearch && matchesRisk;
     });
-    
+
     displayPredictions(filtered);
 }
 
@@ -563,7 +613,7 @@ clearFiltersBtn.addEventListener('click', () => {
 function createPredictionItem(predData, sensorData) {
     const div = document.createElement('div');
     div.className = 'prediction-item';
-    
+
     const probability = (predData.failure_probability * 100).toFixed(1);
     const timestamp = predData.timestamp.toDate().toLocaleString('en-US', {
         year: 'numeric',
@@ -574,9 +624,9 @@ function createPredictionItem(predData, sensorData) {
         second: '2-digit',
         hour12: false
     });
-    const riskClass = predData.failure_probability < 0.3 ? 'low' : 
-                      predData.failure_probability < 0.7 ? 'medium' : 'high';
-    
+    const riskClass = predData.failure_probability < 0.3 ? 'low' :
+        predData.failure_probability < 0.7 ? 'medium' : 'high';
+
     div.innerHTML = `
         <div class="pred-info">
             <div class="pred-time">
@@ -612,7 +662,7 @@ function createPredictionItem(predData, sensorData) {
             <div class="pred-risk risk-${riskClass}">${probability}%</div>
         </div>
     `;
-    
+
     return div;
 }
 
@@ -631,27 +681,27 @@ clearAllBtn.addEventListener('click', async () => {
         '⚠️ WARNING: This will permanently delete ALL sensor data and predictions from the database.\n\n' +
         'Are you absolutely sure you want to continue?'
     );
-    
+
     if (!confirmation) {
         return;
     }
-    
+
     // Double confirmation for safety
     const doubleConfirm = confirm(
         '🚨 FINAL CONFIRMATION\n\n' +
         'This action CANNOT be undone!\n\n' +
         'Click OK to permanently delete all data.'
     );
-    
+
     if (!doubleConfirm) {
         return;
     }
-    
+
     try {
         clearAllBtn.disabled = true;
         clearAllBtn.textContent = '🔄 Deleting...';
         clearAllBtn.style.opacity = '0.6';
-        
+
         // Delete all predictions
         const predictionsSnapshot = await db.collection('predictions').get();
         const predictionDeletePromises = [];
@@ -660,7 +710,7 @@ clearAllBtn.addEventListener('click', async () => {
         });
         await Promise.all(predictionDeletePromises);
         console.log(`Deleted ${predictionDeletePromises.length} predictions`);
-        
+
         // Delete all sensor data
         const sensorDataSnapshot = await db.collection('sensor_data').get();
         const sensorDeletePromises = [];
@@ -669,31 +719,40 @@ clearAllBtn.addEventListener('click', async () => {
         });
         await Promise.all(sensorDeletePromises);
         console.log(`Deleted ${sensorDeletePromises.length} sensor data records`);
-        
+
         // Clear chart data
         chartData.labels = [];
         chartData.temperature = [];
         chartData.vibration = [];
         chartData.rpm = [];
         chartData.risk = [];
-        
+
         // Update all charts
         temperatureChart.update();
         vibrationChart.update();
         rpmChart.update();
         riskChart.update();
         combinedChart.update();
-        
+
         // Clear predictions list
         allPredictions = [];
         predictionsList.innerHTML = '<div class="no-results">No data available</div>';
-        
+
         // Reset footer values
         totalReadingsEl.textContent = '0';
         lastUpdateEl.textContent = 'Never';
-        
+
+        // Reset latest reading box
+        document.getElementById('latest-temp').textContent = '--';
+        document.getElementById('latest-vib').textContent = '--';
+        document.getElementById('latest-rpm').textContent = '--';
+        document.getElementById('latest-timestamp').textContent = 'No data yet';
+        const riskValueEl = document.getElementById('latest-risk');
+        riskValueEl.textContent = '--%';
+        riskValueEl.classList.remove('risk-low', 'risk-medium', 'risk-high');
+
         alert(`✅ Successfully deleted all data!\n\nPredictions: ${predictionDeletePromises.length}\nSensor Data: ${sensorDeletePromises.length}`);
-        
+
     } catch (error) {
         console.error('Error deleting data:', error);
         alert(`❌ Error deleting data: ${error.message}\n\nMake sure your Firestore security rules allow delete operations.`);

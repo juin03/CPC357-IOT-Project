@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Motor Health Monitoring Dashboard</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <div class="container">
         <header>
@@ -15,6 +17,43 @@
                 🗑️ Clear All Data
             </button>
         </header>
+
+        <div class="latest-reading-box">
+            <div class="latest-header">
+                <h2>Latest Reading</h2>
+                <div class="latest-timestamp-header">
+                    <span id="latest-timestamp">No data yet</span>
+                </div>
+            </div>
+            <div class="latest-content">
+                <div class="latest-sensors">
+                    <div class="latest-sensor temp">
+                        <div class="latest-details">
+                            <span class="latest-label">Temperature</span>
+                            <span class="latest-value" id="latest-temp">--</span>
+                        </div>
+                    </div>
+                    <div class="latest-sensor vib">
+                        <div class="latest-details">
+                            <span class="latest-label">Vibration</span>
+                            <span class="latest-value" id="latest-vib">--</span>
+                        </div>
+                    </div>
+                    <div class="latest-sensor rpm">
+                        <div class="latest-details">
+                            <span class="latest-label">RPM</span>
+                            <span class="latest-value" id="latest-rpm">--</span>
+                        </div>
+                    </div>
+                    <div class="latest-sensor prediction">
+                        <div class="latest-details">
+                            <span class="latest-label">Failure Risk</span>
+                            <span class="latest-value latest-risk-value" id="latest-risk">--%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <div class="charts-container">
             <div class="chart-section">
@@ -67,11 +106,12 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    
+
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    
+
     <!-- App Script -->
     <script src="app.js"></script>
 </body>
+
 </html>
