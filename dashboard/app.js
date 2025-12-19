@@ -16,8 +16,8 @@ const db = firebase.firestore();
 const lastUpdateEl = document.getElementById('last-update');
 const totalReadingsEl = document.getElementById('total-readings');
 const predictionsList = document.getElementById('predictions-list');
-const connectionStatusEl = document.getElementById('connection-status');
-const statusTextEl = connectionStatusEl.querySelector('.status-text');
+
+// Connection status elements removed
 const pauseBtn = document.getElementById('pause-btn');
 const exportBtn = document.getElementById('export-btn');
 const timeValueInput = document.getElementById('time-value');
@@ -1044,24 +1044,6 @@ clearAllBtn.addEventListener('click', async () => {
 // ==========================================
 // New Features Implementation
 // ==========================================
-
-// 1. Connection Status Management
-function updateConnectionStatus(isOnline) {
-    if (isOnline) {
-        connectionStatusEl.classList.remove('offline');
-        connectionStatusEl.classList.add('online');
-        statusTextEl.textContent = 'System Online';
-    } else {
-        connectionStatusEl.classList.remove('online');
-        connectionStatusEl.classList.add('offline');
-        statusTextEl.textContent = 'Connection Lost';
-    }
-}
-
-window.addEventListener('online', () => updateConnectionStatus(true));
-window.addEventListener('offline', () => updateConnectionStatus(false));
-// Initial check
-updateConnectionStatus(navigator.onLine);
 
 
 // 2. Pause/Resume Functionality
