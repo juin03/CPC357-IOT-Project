@@ -485,7 +485,7 @@ function updateLatestReading(sensorData, predictionData) {
 
     const probability = (predictionData.failure_probability * 100).toFixed(1);
     const riskClass = predictionData.failure_probability <= 0.3 ? 'low' :
-        predictionData.failure_probability < 0.6 ? 'medium' : 'high';
+        predictionData.failure_probability <= 0.8 ? 'medium' : 'high';
 
     // Update sensor values
     document.getElementById('latest-temp').textContent = `${sensorData.temperature.toFixed(1)}°C`;
@@ -866,9 +866,9 @@ function applyFilters() {
             if (riskLevel === 'low') {
                 matchesRisk = probability <= 0.3;
             } else if (riskLevel === 'medium') {
-                matchesRisk = probability > 0.3 && probability < 0.6;
+                matchesRisk = probability > 0.3 && probability <= 0.8;
             } else if (riskLevel === 'high') {
-                matchesRisk = probability >= 0.6;
+                matchesRisk = probability > 0.8;
             }
         }
 
@@ -903,7 +903,7 @@ function createPredictionItem(predData, sensorData) {
         hour12: false
     });
     const riskClass = predData.failure_probability <= 0.3 ? 'low' :
-        predData.failure_probability < 0.6 ? 'medium' : 'high';
+        predData.failure_probability <= 0.8 ? 'medium' : 'high';
 
     div.innerHTML = `
         <div class="pred-info">
@@ -1106,7 +1106,7 @@ exportBtn.addEventListener('click', () => {
         const prob = (item.prediction.failure_probability * 100).toFixed(2);
 
         let risk = 'Low';
-        if (item.prediction.failure_probability >= 0.6) risk = 'High';
+        if (item.prediction.failure_probability > 0.8) risk = 'High';
         else if (item.prediction.failure_probability > 0.3) risk = 'Medium';
 
         return [timestamp, temp, vib, rpm, prob, risk].join(',');
