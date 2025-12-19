@@ -14,33 +14,54 @@ url = os.getenv("CLOUD_RUN_URL", "https://motor-health-api-250203692178.asia-sou
 # Generate 5 test cases with varying values
 test_cases = []
 
-print("Generating 5 diverse test cases...\n")
+print("Generating 8 diverse test cases...\n")
 
-for i in range(5):
+for i in range(8):
     # Generate realistic varying sensor data based on train_model.py definitions
     
     # 3 Success Cases (Normal Operation)
-    # Range: Temp 20-30, Vib 0.3-0.6, RPM 2000-3000
     if i < 3:
         temp = random.uniform(20, 30)
         vib = random.uniform(0.3, 0.6)
         rpm = random.uniform(2000, 3000)
         case_type = "Normal"
         
-    # 2 Failure Cases
+    # 5 Failure Cases
     elif i == 3:
-        # Failure B/D: High Vibration and/or Temp
-        temp = random.uniform(40, 60) # High Temp
-        vib = random.uniform(1.5, 3.0) # High Vib
-        rpm = random.uniform(2000, 3000) # Normal RPM
+        # Failure B/D: High Vibration and/or Temp (Medium-High Risk)
+        temp = random.uniform(40, 50) 
+        vib = random.uniform(1.5, 2.0) 
+        rpm = random.uniform(2000, 3000)
         case_type = "High Risk (Vib/Temp)"
         
-    else: # i == 4
-        # Failure C: Low RPM (Stall/Load issue)
-        temp = random.uniform(20, 30) # Normal Temp
-        vib = random.uniform(0.3, 0.6) # Normal Vib
-        rpm = random.uniform(1000, 1800) # Low RPM (< 2000)
+    elif i == 4:
+        # Failure C: Low RPM (Medium-High Risk)
+        temp = random.uniform(20, 30)
+        vib = random.uniform(0.3, 0.6)
+        rpm = random.uniform(1000, 1800)
         case_type = "High Risk (Low RPM)"
+
+    # NEW: >80% Failure Probability Cases
+    elif i == 5:
+        # Critical Overheat
+        temp = random.uniform(65, 80) # > 60 is critical
+        vib = random.uniform(0.3, 0.6)
+        rpm = random.uniform(2000, 3000)
+        case_type = "CRITICAL: Overheat"
+
+    elif i == 6:
+        # Extreme Vibration
+        temp = random.uniform(20, 30)
+        vib = random.uniform(3.5, 5.0) # > 3.0 is critical
+        rpm = random.uniform(2000, 3000)
+        case_type = "CRITICAL: Vibration"
+
+    else: # i == 7
+        # Motor Stall / Locked Rotor
+        temp = random.uniform(50, 70) # Getting hot
+        vib = random.uniform(4.0, 6.0) # Shaking violently
+        rpm = random.uniform(0, 500) # Stalled
+        case_type = "CRITICAL: STALL"
     
     test_cases.append({
         "name": f"Test {i+1} ({case_type})",
