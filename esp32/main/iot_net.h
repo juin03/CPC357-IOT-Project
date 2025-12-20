@@ -4,11 +4,12 @@
 #include <PubSubClient.h> // Make sure to install this library
 #include <ArduinoJson.h>
 
-// Hardcoded MQTT Broker (or use Cloud VM IP)
-// Using public broker for testing, change to your VM IP!
-static const char *MQTT_BROKER = "test.mosquitto.org"; 
+// Hardcoded MQTT Broker (set to your Cloud VM IP)
+// Ensure this matches the broker your cloud subscriber uses
+static const char *MQTT_BROKER = "34.177.80.102";
 static const int MQTT_PORT = 1883;
 static const char *MQTT_TOPIC = "motor/health/data";
+static const char *MQTT_CLIENT_PREFIX = "ESP32Client-";
 
 // Provide your WiFi credentials via build flags or set here if needed
 #ifndef WIFI_SSID
@@ -50,14 +51,24 @@ inline void connectWiFi()
     }
 }
 
-inline void connectMQTT() {
+inline void connectMQTT()
+{
     client.setServer(MQTT_BROKER, MQTT_PORT);
-    
-    while (!client.connected()) {
+    client.setKeepAlive(60);
+    client.setBufferSize(512);
+    // Build a unique client ID from MAC to avoid collisions
+    String clientId = String(MQTT_CLIENT_PREFIX) + WiFi.macAddress();
+    clientId.replace(":", "");
+
+    while (!client.connected())
+    {
         Serial.print("Connecting to MQTT... ");
-        if (client.connect("ESP32Client")) {
+        if (client.connect(clientId.c_str()))
+        {
             Serial.println("connected");
-        } else {
+        }
+        else
+        {
             Serial.print("failed, rc=");
             Serial.print(client.state());
             Serial.println(" try again in 5 seconds");
@@ -66,8 +77,10 @@ inline void connectMQTT() {
     }
 }
 
-inline void mqttLoop() {
-    if (!client.connected()) {
+inline void mqttLoop()
+{
+    if (!client.connected())
+    {
         connectMQTT();
     }
     client.loop();
@@ -80,8 +93,9 @@ inline float publishData(float temperature, float vibration, int rpm, unsigned l
         Serial.println("✗ WiFi not connected!");
         return -1.0f;
     }
-    
-    if (!client.connected()) {
+
+    if (!client.connected())
+    {
         connectMQTT();
     }
 
@@ -95,10 +109,13 @@ inline float publishData(float temperature, float vibration, int rpm, unsigned l
     serializeJson(doc, payload);
 
     Serial.print("📤 Publishing to MQTT... ");
-    if (client.publish(MQTT_TOPIC, payload.c_str())) {
+    if (client.publish(MQTT_TOPIC, payload.c_str()))
+    {
         Serial.println("✓ Success!");
         return 0.0f; // Return 0 as we don't get immediate response prob from MQTT
-    } else {
+    }
+    else
+    {
         Serial.println("✗ Failed!");
         return -1.0f;
     }

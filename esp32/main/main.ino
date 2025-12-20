@@ -74,11 +74,15 @@ void setup()
 
   // WiFi
   connectWiFi();
+  // Connect to MQTT broker once after WiFi
+  connectMQTT();
 }
 
 // ================== LOOP ==================
 void loop()
 {
+  // Keep MQTT connection alive and process inbound traffic
+  mqttLoop();
 
   // -------- TEMPERATURE --------
   DS18B20.requestTemperatures();
@@ -134,26 +138,28 @@ void loop()
     Serial.print(" | Vib RMS: ");
     Serial.print(vibRMS, 3);
     Serial.print(" m/s^2 | Alarm: ");
+    // Finish the line to avoid mixing with MQTT logs
+    Serial.println();
 
     // Dont use this
     // Serial.println((vibRMS > VIB_THRESHOLD) ? "ON" : "OFF");
 
     // ----- POST TO API (MQTT) -----
     unsigned long ts = (unsigned long)(millis() / 1000); // fallback if NTP not used
-    
-    // Ensure MQTT connection is alive
-    mqttLoop();
-    
+
     float result = publishData(tempC, vibRMS, (int)rpm, ts);
-    
+
     // Note: With MQTT we don't get immediate failure probability back synchronously
     // So we disable the immediate alarm check from the return value.
     // Ideally, the ESP32 should SUBSCRIBE to a "motor/health/alert" topic if we want 2-way comms.
     // For now, we just log.
-    if (result == 0.0f) {
-        Serial.println("Data queued.");
-    } else {
-        Serial.println("Failed to queue data.");
+    if (result == 0.0f)
+    {
+      Serial.println("Data queued.");
+    }
+    else
+    {
+      Serial.println("Failed to queue data.");
     }
   }
 }
