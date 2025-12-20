@@ -14,9 +14,11 @@ load_dotenv()
 MQTT_BROKER = os.getenv("MQTT_BROKER", "34.177.80.102") 
 MQTT_PORT = int(os.getenv("MQTT_PORT", 1883))
 MQTT_TOPIC = "motor/health/data"
+MQTT_ALERT_TOPIC = "motor/health/alert"
 
 print(f"🚀 Connecting to MQTT Broker at {MQTT_BROKER}:{MQTT_PORT}...")
 
+# Callback when connected
 def on_connect(client, userdata, flags, rc):
     connection_codes = {
         0: "Success",
@@ -29,6 +31,24 @@ def on_connect(client, userdata, flags, rc):
     print(f"📡 Connection Status: {connection_codes.get(rc, 'Unknown code')}")
     if rc == 0:
         print("✅ Simulating sensor data stream...")
+        # Subscribe to the alert topic to verify the full loop
+        client.subscribe(MQTT_ALERT_TOPIC)
+        print(f"👂 Listening for return alerts on: {MQTT_ALERT_TOPIC}")
+
+# Callback when message received (Simulating ESP32 receiving result)
+def on_message(client, userdata, msg):
+    try:
+        payload = json.loads(msg.payload.decode())
+        risk = payload.get("probability", 0.0)
+        
+        # Simulate ESP32 Buzzer Logic
+        if risk > 0.8:
+            print(f"\n🚨 [ESP32 SIMULATION] ALARM TRIGGERED! Risk: {risk:.1%} (Threshold > 80%)")
+        else:
+            print(f"\n🟢 [ESP32 SIMULATION] Risk OK: {risk:.1%}")
+            
+    except Exception as e:
+        print(f"❌ Error parsing alert: {e}")
 
 def on_publish(client, userdata, mid):
     # print(f"Message {mid} published.")
@@ -36,6 +56,7 @@ def on_publish(client, userdata, mid):
 
 client = mqtt.Client()
 client.on_connect = on_connect
+client.on_message = on_message
 client.on_publish = on_publish
 
 try:
