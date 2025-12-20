@@ -13,7 +13,7 @@ Industrial motors are the workhorses of manufacturing plants and production line
 ### 1.2 Objectives
 The primary goal is to develop a robust prototype that demonstrates the feasibility of remote, predictive maintenance.
 1.  **Monitor Motor Health**: To continuously measure critical parameters (temperature, vibration, and RPM) using the ESP32 microcontroller with high sampling precision.
-2.  **Predict Failures**: To leverage cloud computing (**Google Cloud Run**) to execute machine learning models that detect anomalies and calculate failure probability in real-time.
+2.  **Predict Failures**: To leverage cloud computing (**Google Cloud Compute Engine**) to execute machine learning models that detect anomalies and calculate failure probability in real-time.
 3.  **Real-time Visualization**: To centralize data storage in **Google Firestore** and visualize live telemetry via a responsive web dashboard for remote decision-making.
 4.  **Local & Remote Alerts**: To trigger immediate local warnings (buzzer, **LEDs**) and remote notifications (Telegram) when abnormal behavior is detected to ensure rapid response.
 
@@ -38,7 +38,7 @@ The predictive nature of the system ensures that industrial infrastructure remai
 ### 2.1 Hardware Components
 
 #### Microcontroller & Edge Processor
-**ESP32 NodeMCU** [4]: Selected for its dual-core Tensilica Xtensa LX6 processor (up to 240 MHz) and built-in Wi-Fi 802.11 b/g/n capabilities. It acts as the edge gateway, performing critical **edge pre-processing** before data transmission to reduce bandwidth and latency:
+**ESP32 NodeMCU** [4]: Selected for its dual-core Tensilica Xtensa LX6 processor (up to 240 MHz) and built-in Wi-Fi 802.11 b/g/n capabilities. It acts as the edge gateway, performing critical **edge pre-processing** before data transmission via **MQTT** to reduce bandwidth and latency:
 *   **Vibration Analysis**: Instead of streaming thousands of raw accelerometer points, the ESP32 captures a burst of **200 high-frequency samples** and calculates the Root Mean Square (RMS) locally. This condenses the "roughness" of the motor into a single floating-point value.
     ```cpp
     // Code Snapshot from esp32/main/main.ino
@@ -139,8 +139,8 @@ Please check the equipment immediately!
 - Immediate mobile alerts for rapid response
 - Historical message log for incident tracking
 
-### 2.4 System Architecture (To draw and review)
-The system follows a distributed IoT architecture with edge processing, cloud inference, and real-time data synchronization:
+### 2.4 System Architecture (Revised for MQTT)
+The system follows a distributed IoT architecture with edge processing, lightweight MQTT messaging, and cloud-based inference:
 
 ```mermaid
 graph TB
@@ -153,8 +153,9 @@ graph TB
         LED["LEDs<br/>(G/Y/R)"]
     end
     
-    subgraph Cloud["Cloud Layer - Google Cloud Platform"]
-        CR["Cloud Run<br/>FastAPI + ML Model"]
+    subgraph Cloud["Cloud Layer - Google Compute Engine"]
+        MQTT["Mosquitto<br/>MQTT Broker"]
+        SUB["Python Subscriber<br/>ML Inference"]
         FS["Firestore<br/>NoSQL Database"]
         TG["Telegram Bot<br/>Remote Notifications"]
     end
@@ -168,14 +169,16 @@ graph TB
     S2 -->|"I2C"| ESP
     S3 -->|"Digital Pulse"| ESP
     
-    ESP -->|"HTTPS POST<br/>{temp, vib, rpm, timestamp}"| CR
-    CR -->|"Failure Probability"| ESP
-    ESP -->|"Risk > 80%"| BUZ
-    ESP -->|"Status Control"| LED
+    ESP -->|"MQTT Publish<br/>motor/health/data"| MQTT
+    MQTT -->|"Subscribe"| SUB
+    SUB -->|"Failure Probability"| FS
     
-    CR -->|"Store sensor_data"| FS
-    CR -->|"Store predictions"| FS
-    CR -->|"Prob > 70%"| TG
+    SUB -->|"Store sensor_data"| FS
+    SUB -->|"Store predictions"| FS
+    SUB -->|"Prob > 70%"| TG
+    
+    ESP -.->|"Local Logic"| BUZ
+    ESP -.->|"Local Logic"| LED
     
     FS -->|"Real-time Listener"| DASH
     TG -->|"Push Notification"| MOB
@@ -183,19 +186,20 @@ graph TB
     style Edge fill:#e1f5e1
     style Cloud fill:#e3f2fd
     style UI fill:#fff3e0
-    style CR fill:#4CAF50,color:#fff
+    style MQTT fill:#ffcc80,color:#000
+    style SUB fill:#4CAF50,color:#fff
     style FS fill:#FFA726,color:#fff
 ```
 
 **Data Flow Steps:**
-1. **Sensor Acquisition** (1 Hz): ESP32 reads temperature, vibration (RMS), and RPM
-2. **Edge Transmission**: JSON payload sent via secure HTTPS to Cloud Run endpoint `/predict`
-3. **ML Inference**: Random Forest model computes failure probability (0.0–1.0)
-4. **Data Persistence**: Results stored in Firestore collections (`sensor_data`, `predictions`)
+1. **Sensor Acquisition** (1 Hz): ESP32 reads temperature, vibration (RMS), and RPM.
+2. **Edge Transmission**: JSON payload published via lightweight **MQTT protocol** to the Mosquitto Broker on Google Cloud VM.
+3. **Cloud Processing**: The Python Subscriber service receives the message, runs the Random Forest model, and calculates failure probability.
+4. **Data Persistence**: Results stored in Firestore collections (`sensor_data`, `predictions`).
 5.  **Alert Distribution**:
-    - Local: Buzzer activated if probability > 80%; LEDs set to Green/Yellow/Red based on risk.
-    - Remote: Telegram message sent if probability > 70%
-6. **Real-time Visualization**: Dashboard subscribes to Firestore changes and updates charts instantly
+    - Local: Buzzer activated by ESP32 based on local threshold (or via return message if implemented).
+    - Remote: Cloud Subscriber triggers Telegram message if probability > 70%.
+6. **Real-time Visualization**: Dashboard subscribes to Firestore changes and updates charts instantly.
 
 ---
 
@@ -220,13 +224,15 @@ Since inducing catastrophic failure in a small prototype motor is difficult and 
 ### 3.2 Cloud Implementation
 The system leverages the Google Cloud Platform (GCP) ecosystem to ensure scalability, reliability, and ease of deployment.
 
-#### Google Cloud Run (Compute & Inference)
-Cloud Run is used to host the Python FastAPI backend and the Machine Learning model.
-*   **Role**: Receives sensor data from ESP32, runs the Random Forest inference, and returns the failure probability.
+#### Google Compute Engine (Virtual Machine)
+A Google Cloud VM (`e2-micro`) is used to host the Mosquitto MQTT Broker and the Python Subscriber service.
+*   **Role**:
+    1.  **MQTT Broker**: Acts as the central post office, receiving lightweight messages from the ESP32.
+    2.  **Subscriber Service**: A continuously running Python script that listens to the broker, runs the Random Forest inference, and writes results to the database.
 *   **Why Chosen**:
-    *   **Serverless**: Removes the need to manage infrastructure or OS updates (unlike a Virtual Machine or Raspberry Pi).
-    *   **Containerized**: Uses Docker containers, ensuring the environment (Python dependencies) is consistent across development and production.
-    *   **Auto-scaling**: Automatically scales down to zero when not in use to save costs, and scales up instantly when receiving requests.
+    *   **Low Latency**: MQTT is significantly faster and lighter than HTTP (REST), making it ideal for real-time sensor streams.
+    *   **Control**: Full control over the operating system allows for custom broker configuration and persistent connections.
+    *   **Cost-Effective**: The `e2-micro` instance falls within the GCP Free Tier, making it a sustainable choice for continuous 24/7 monitoring.
 
 #### Google Firestore (Database)
 Firestore is a NoSQL document database used for storing time-series sensor data and prediction results.
