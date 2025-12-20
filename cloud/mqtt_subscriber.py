@@ -17,6 +17,7 @@ load_dotenv()
 MQTT_BROKER = os.getenv("MQTT_BROKER", "test.mosquitto.org") 
 MQTT_PORT = int(os.getenv("MQTT_PORT", 1883))
 MQTT_TOPIC = "motor/health/data"
+MQTT_ALERT_TOPIC = "motor/health/alert"
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
@@ -116,6 +117,13 @@ def process_sensor_data(data):
         })
 
         print(f"✅ Data Processed: Temp={data['temperature']} Vib={data['vibration']} RPM={data['rpm']} -> Risk={mean_prob:.1%}")
+
+        # 6. Publish Result back to MQTT (for ESP32 to react)
+        alert_payload = {
+            "probability": float(mean_prob)
+        }
+        client.publish(MQTT_ALERT_TOPIC, json.dumps(alert_payload))
+        print(f"📤 Published result to {MQTT_ALERT_TOPIC}")
 
     except Exception as e:
         print(f"❌ Error processing data: {e}")
