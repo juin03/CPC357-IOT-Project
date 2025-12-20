@@ -10,6 +10,8 @@
 #define TEMP_PIN 17
 #define RPM_PIN 25
 #define BUZZER_PIN 26
+#define GREEN_LED_PIN 27
+#define RED_LED_PIN 14
 
 // ================== POSTING INTERVAL ==================
 #define POST_INTERVAL_MS 5000
@@ -42,6 +44,13 @@ void IRAM_ATTR countPulse()
 void setup()
 {
   Serial.begin(115200);
+
+  // LEDs
+  pinMode(GREEN_LED_PIN, OUTPUT);
+  pinMode(RED_LED_PIN, OUTPUT);
+
+  digitalWrite(GREEN_LED_PIN, LOW);
+  digitalWrite(RED_LED_PIN, LOW);
 
   // I2C protection
   Wire.setTimeOut(50);
@@ -151,18 +160,22 @@ void loop()
 
     // Note: With MQTT we don't get immediate failure probability back synchronously IN THE SAME Call
     // But we expect the callback to update 'latestRisk' and 'isDanger' soon.
-    
+
     // Check global flags updated by mqttCallback
     // Threshold set to > 0.8 as per user requirement
     if (latestRisk > 0.8)
     {
       digitalWrite(BUZZER_PIN, HIGH);
+      digitalWrite(GREEN_LED_PIN, LOW);
+      digitalWrite(RED_LED_PIN, HIGH);
       Serial.print("⚠️ ALARM! Risk: ");
       Serial.print(latestRisk * 100);
       Serial.println("%");
     }
     else
     {
+      digitalWrite(GREEN_LED_PIN, HIGH);
+      digitalWrite(RED_LED_PIN, LOW);
       digitalWrite(BUZZER_PIN, LOW);
     }
 
