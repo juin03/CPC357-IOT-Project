@@ -105,7 +105,7 @@ def process_sensor_data(data):
         sensor_doc_id = sensor_ref[1].id
 
         # 4. Check Risk
-        if mean_prob > 0.7:
+        if mean_prob > 0.8:
             send_failure_notification(mean_prob, data)
 
         # 5. Firestore Write (Prediction)
