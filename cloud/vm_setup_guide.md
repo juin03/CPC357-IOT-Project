@@ -82,14 +82,14 @@ sudo usermod -aG docker $USER
 2.  **Build & Tag**:
     (Run inside `cloud` folder)
     ```bash
-    # Format: [REGION]-docker.pkg.dev/[PROJECT-ID]/[REPO-NAME]/[IMAGE-NAME]:[TAG]
-    # Replace [PROJECT-ID] with your actual project ID (e.g., iot-project-123)
-    docker build -t asia-southeast1-docker.pkg.dev/[PROJECT-ID]/motor-health-repo/subscriber:v1 .
+    # Format: [REGION]-docker.pkg.dev/iot-project-481405/[REPO-NAME]/[IMAGE-NAME]:[TAG]
+    # Replace [PROJECT-ID] with your actual project ID (e.g., iot-project-481405)
+    docker build -t asia-southeast1-docker.pkg.dev/iot-project-481405/motor-health-repo/mqtt-bridge:v1 .
     ```
 
 3.  **Push**:
     ```bash
-    docker push asia-southeast1-docker.pkg.dev/[PROJECT-ID]/motor-health-repo/subscriber:v1
+    docker push asia-southeast1-docker.pkg.dev/iot-project-481405/motor-health-repo/mqtt-bridge:v1
     ```
 
 ### C. Deploy on VM
@@ -103,17 +103,17 @@ sudo usermod -aG docker $USER
 2.  **Pull & Run**:
     ```bash
     # Pull
-    docker pull asia-southeast1-docker.pkg.dev/[PROJECT-ID]/motor-health-repo/subscriber:v1
+    docker pull asia-southeast1-docker.pkg.dev/iot-project-481405/motor-health-repo/mqtt-bridge:v1
 
     # Run
     docker run -d \
-      --name motor-subscriber \
+      --name mqtt-bridge \
       --network host \
       -e MQTT_BROKER="localhost" \
       -e MQTT_PORT=1883 \
       -e TELEGRAM_BOT_TOKEN="your_token_here" \
       -e TELEGRAM_CHAT_ID="your_chat_id_here" \
-      asia-southeast1-docker.pkg.dev/[PROJECT-ID]/motor-health-repo/subscriber:v1
+      asia-southeast1-docker.pkg.dev/iot-project-481405/motor-health-repo/mqtt-bridge:v1
     ```
 
 ## 4. Updates for ESP32
