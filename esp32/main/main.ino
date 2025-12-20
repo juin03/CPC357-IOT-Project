@@ -138,28 +138,22 @@ void loop()
     // Dont use this
     // Serial.println((vibRMS > VIB_THRESHOLD) ? "ON" : "OFF");
 
-    // ----- POST TO API -----
+    // ----- POST TO API (MQTT) -----
     unsigned long ts = (unsigned long)(millis() / 1000); // fallback if NTP not used
-    float failureProbability = sendToAPI(tempC, vibRMS, (int)rpm, ts);
-    if (failureProbability >= 0)
-    {
-      Serial.print(" | Failure Risk: ");
-      Serial.print(failureProbability * 100.0, 1);
-      Serial.println(" %");
-
-      // ----- BUZZER BEEP WHEN PROBABILITY > 0.8-----
-      if (failureProbability > 0.8f)
-      {
-        digitalWrite(BUZZER_PIN, HIGH); // ALARM
-      }
-      else
-      {
-        digitalWrite(BUZZER_PIN, LOW);
-      }
-    }
-    else
-    {
-      Serial.println(" | Failure Risk: N/A");
+    
+    // Ensure MQTT connection is alive
+    mqttLoop();
+    
+    float result = publishData(tempC, vibRMS, (int)rpm, ts);
+    
+    // Note: With MQTT we don't get immediate failure probability back synchronously
+    // So we disable the immediate alarm check from the return value.
+    // Ideally, the ESP32 should SUBSCRIBE to a "motor/health/alert" topic if we want 2-way comms.
+    // For now, we just log.
+    if (result == 0.0f) {
+        Serial.println("Data queued.");
+    } else {
+        Serial.println("Failed to queue data.");
     }
   }
 }
