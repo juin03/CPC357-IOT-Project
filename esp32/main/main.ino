@@ -149,11 +149,24 @@ void loop()
 
     float result = publishData(tempC, vibRMS, (int)rpm, ts);
 
-    // Note: With MQTT we don't get immediate failure probability back synchronously
-    // So we disable the immediate alarm check from the return value.
-    // Ideally, the ESP32 should SUBSCRIBE to a "motor/health/alert" topic if we want 2-way comms.
-    // For now, we just log.
-    if (result == 0.0f)
+    // Note: With MQTT we don't get immediate failure probability back synchronously IN THE SAME Call
+    // But we expect the callback to update 'latestRisk' and 'isDanger' soon.
+    
+    // Check global flags updated by mqttCallback
+    // Threshold set to > 0.8 as per user requirement
+    if (latestRisk > 0.8)
+    {
+      digitalWrite(BUZZER_PIN, HIGH);
+      Serial.print("⚠️ ALARM! Risk: ");
+      Serial.print(latestRisk * 100);
+      Serial.println("%");
+    }
+    else
+    {
+      digitalWrite(BUZZER_PIN, LOW);
+    }
+
+    if (result >= 0.0f)
     {
       Serial.println("Data queued.");
     }

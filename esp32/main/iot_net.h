@@ -9,7 +9,11 @@
 static const char *MQTT_BROKER = "34.177.80.102";
 static const int MQTT_PORT = 1883;
 static const char *MQTT_TOPIC = "motor/health/data";
+static const char *MQTT_SUB_TOPIC = "motor/health/alert";
 static const char *MQTT_CLIENT_PREFIX = "ESP32Client-";
+
+// Shared variable for risk (0.0 to 1.0)
+float latestRisk = 0.0;
 
 // Provide your WiFi credentials via build flags or set here if needed
 #ifndef WIFI_SSID
@@ -21,6 +25,41 @@ static const char *MQTT_CLIENT_PREFIX = "ESP32Client-";
 
 WiFiClient espClient;
 PubSubClient client(espClient);
+
+// Callback function for incoming MQTT messages
+void mqttCallback(char *topic, byte *payload, unsigned int length)
+{
+    Serial.print("📨 Message arrived [");
+    Serial.print(topic);
+    Serial.print("]: ");
+
+    String message;
+    for (unsigned int i = 0; i < length; i++)
+    {
+        message += (char)payload[i];
+    }
+    Serial.println(message);
+
+    // Parse JSON
+    StaticJsonDocument<200> doc;
+    DeserializationError error = deserializeJson(doc, message);
+
+    if (!error)
+    {
+        if (doc.containsKey("probability"))
+        {
+            latestRisk = doc["probability"];
+        }
+        Serial.print("Parsed Risk: ");
+        Serial.print(latestRisk * 100);
+        Serial.println("%");
+    }
+    else
+    {
+        Serial.print("deserializeJson() failed: ");
+        Serial.println(error.c_str());
+    }
+}
 
 inline void connectWiFi()
 {
@@ -54,6 +93,7 @@ inline void connectWiFi()
 inline void connectMQTT()
 {
     client.setServer(MQTT_BROKER, MQTT_PORT);
+    client.setCallback(mqttCallback); // Set callback here
     client.setKeepAlive(60);
     client.setBufferSize(512);
     // Build a unique client ID from MAC to avoid collisions
@@ -66,6 +106,10 @@ inline void connectMQTT()
         if (client.connect(clientId.c_str()))
         {
             Serial.println("connected");
+            // Subscribe to the alert topic
+            client.subscribe(MQTT_SUB_TOPIC);
+            Serial.print("Subscribed to: ");
+            Serial.println(MQTT_SUB_TOPIC);
         }
         else
         {
@@ -112,7 +156,7 @@ inline float publishData(float temperature, float vibration, int rpm, unsigned l
     if (client.publish(MQTT_TOPIC, payload.c_str()))
     {
         Serial.println("✓ Success!");
-        return 0.0f; // Return 0 as we don't get immediate response prob from MQTT
+        return latestRisk; // Return the latest known risk from cloud
     }
     else
     {
