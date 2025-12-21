@@ -8,7 +8,7 @@
 ## 1.0 Introduction
 
 ### 1.1 Problem Statement
-Industrial motors are the workhorses of manufacturing plants and production lines, powering critical machinery from conveyor belts to heavy-duty compressors. However, they commonly experience failures due to overheating, excessive vibration, or unstable rotational speed, with bearing and stator faults accounting for over 70% of total failures [1]. These mechanical faults often develop gradually, but traditional "run-to-failure" or scheduled maintenance approaches are inefficient. In industrial settings, manual inspections are infrequent and hazardous, often failing to identify early warning signs. Consequently, sudden breakdowns lead to costly downtime, production halts, and safety risks. Therefore, a low-cost IoT and machine learning system is required to continuously monitor motor condition, analyze patterns, and predict potential failures before they occur, transitioning maintenance from reactive to proactive in line with modern Industry 4.0 standards [2].
+Industrial motors are the workhorses of manufacturing plants and production lines, powering critical machinery from conveyor belts to heavy-duty compressors. However, they commonly experience failures due to overheating, excessive vibration, or unstable rotational speed, with bearing and stator faults accounting for over 70% of total failures [1]. These mechanical faults often develop gradually, but traditional "run-to-failure" or scheduled maintenance approaches are inefficient. In industrial settings, manual inspections are infrequent and hazardous, often failing to identify early warning signs. Consequently, sudden breakdowns lead to costly downtime, production halts, and safety risks. Therefore, a low-cost IoT and machine learning system is required to continuously monitor motor condition, analyze patterns, and predict potential failures before they occur, transitioning maintenance from reactive to proactive in line with modern Industry 4.0 standards.
 
 ### 1.2 Objectives
 The primary goal is to develop a robust prototype that demonstrates the feasibility of remote, predictive maintenance.
@@ -18,14 +18,14 @@ The primary goal is to develop a robust prototype that demonstrates the feasibil
 4.  **Local & Remote Alerts**: To trigger immediate local warnings (buzzer, **LEDs**) and remote notifications (Telegram) when abnormal behavior is detected to ensure rapid response.
 
 ### 1.3 SDG 9 Impact Analysis - Industry, Innovation and Infrastructure
-This project is strategically aligned with **SDG 9: Industry, Innovation and Infrastructure**, specifically focusing on the modernization and sustainability of industrial processes [3].
+This project is strategically aligned with **SDG 9: Industry, Innovation and Infrastructure**, specifically focusing on the modernization and sustainability of industrial processes [2].
 
 #### Primary Target: 9.4 - Sustainable Infrastructure & Retrofitting
-*   **Target Description**: By 2030, upgrade infrastructure and retrofit industries to make them sustainable, with increased resource-use efficiency and greater adoption of clean and environmentally sound technologies and industrial processes [3].
+*   **Target Description**: By 2030, upgrade infrastructure and retrofit industries to make them sustainable, with increased resource-use efficiency and greater adoption of clean and environmentally sound technologies and industrial processes [2].
 *   **Application in Project**: This system demonstrates a low-cost "retrofit" approach. By adding IoT sensors to existing legacy motors, industries can extend the lifespan of their equipment and improve operational efficiency without the need for total replacement. This promotes resource efficiency and reduces industrial waste.
 
 #### Secondary Target: 9.5 - Technological Upgrade
-*   **Target Description**: Enhance scientific research, upgrade the technological capabilities of industrial sectors in all countries [3].
+*   **Target Description**: Enhance scientific research, upgrade the technological capabilities of industrial sectors in all countries [2].
 *   **Application in Project**: It implements Industry 4.0 principles (Cloud AI, Edge Computing, and Real-time Analytics) in a practical way, providing a scalable model for technological advancement in manufacturing and industrial maintenance.
 
 #### Resilience and Innovation
@@ -38,7 +38,7 @@ The predictive nature of the system ensures that industrial infrastructure remai
 ### 2.1 Hardware Components
 
 #### Microcontroller & Edge Processor
-**ESP32 NodeMCU** [4]: Selected for its dual-core Tensilica Xtensa LX6 processor (up to 240 MHz) and built-in Wi-Fi 802.11 b/g/n capabilities. It acts as the edge gateway, performing critical **edge pre-processing** before data transmission via **MQTT** to reduce bandwidth and latency:
+**ESP32 NodeMCU** [3]: Selected for its dual-core Tensilica Xtensa LX6 processor (up to 240 MHz) and built-in Wi-Fi 802.11 b/g/n capabilities. It acts as the edge gateway, performing critical **edge pre-processing** before data transmission via **MQTT** to reduce bandwidth and latency:
 *   **Vibration Analysis**: Instead of streaming thousands of raw accelerometer points, the ESP32 captures a burst of **200 high-frequency samples** and calculates the Root Mean Square (RMS) locally. This condenses the "roughness" of the motor into a single floating-point value.
     ```cpp
     // Code Snapshot from esp32/main/main.ino
@@ -94,29 +94,30 @@ By aggregating these values into a lightweight JSON payload, the system minimize
 
 | Sensor | Detection Capability | Range & Specification | Usage in Project |
 | :--- | :--- | :--- | :--- |
-| **DS18B20** (Temperature) [6] | Detects thermal runaway and friction-induced heat. | **Range:** -55°C to +125°C<br>**Accuracy:** ±0.5°C (-10°C to +85°C)<br>**Protocol:** OneWire (1-Wire®)<br>**Resolution:** 9-12 bits programmable | Attached to the motor casing to monitor operating temperature deviations. |
-| **MPU6050** (Vibration) [7] | Measures mechanical instability and structural looseness. | **Accel Range:** ±2g to ±16g<br>**Gyro Range:** ±250 to ±2000 °/s<br>**Precision:** 16-bit ADC<br>**Interface:** I²C | Mounted rigidly to the motor base. Calculates Root Mean Square (RMS) acceleration to detect abnormal vibrations. |
-| **TCRT5000** (RPM/IR) [8] | Detects rotational speed and stall conditions. | **Range:** 0.2mm to 15mm (optimal 2.5mm)<br>**Type:** Reflective IR (950nm)<br>**Output:** Digital Pulse<br>**Operating Voltage:** 5V | Placed near the spinning propeller to count rotations per minute, detecting load changes or power failures. |
+| **DS18B20** (Temperature) [4] | Detects thermal runaway and friction-induced heat. | **Range:** -55°C to +125°C<br>**Accuracy:** ±0.5°C (-10°C to +85°C)<br>**Protocol:** OneWire (1-Wire®)<br>**Resolution:** 9-12 bits programmable | Attached to the motor casing to monitor operating temperature deviations. |
+| **MPU6050** (Vibration) [5] | Measures mechanical instability and structural looseness. | **Accel Range:** ±2g to ±16g<br>**Gyro Range:** ±250 to ±2000 °/s<br>**Precision:** 16-bit ADC<br>**Interface:** I²C | Mounted rigidly to the motor base. Calculates Root Mean Square (RMS) acceleration to detect abnormal vibrations. |
+| **TCRT5000** (RPM/IR) [6] | Detects rotational speed and stall conditions. | **Range:** 0.2mm to 15mm (optimal 2.5mm)<br>**Type:** Reflective IR (950nm)<br>**Output:** Digital Pulse<br>**Operating Voltage:** 5V | Placed near the spinning propeller to count rotations per minute, detecting load changes or power failures. |
 
 ### 2.3 Actuators
 
 #### Local Alert - Active Buzzer
-A simple piezoelectric buzzer connected to a GPIO pin. It provides immediate audible feedback to on-site personnel when the cloud API returns a "High Risk" status (>80% probability), ensuring safety even if the dashboard is not being watched.
+A simple piezoelectric buzzer connected to a GPIO pin. It provides immediate audible feedback to on-site personnel when the cloud API returns a "High Risk" status (>80% failure probability), ensuring safety even if the dashboard is not being watched to alert the onsite operators.
 
 #### Local Alert - Status LEDs
 Three colored LEDs provide a visual indication of the real-time motor health status based on the failure probability calculated by the model:
 *   **Green LED (Healthy)**: Indicates normal operation (Probability < 31%).
 *   **Yellow LED (Warning)**: Indicates potential issues or accumulating stress (Probability 31% – 79%).
 *   **Red LED (Critical Failure)**: Indicates high failure probability (> 80%), synchronized with the buzzer alert.
+This is to give immediate feedback to the onsite operators to prevent any potential damage to the motor, for instance when the led light is yellow for a period of time, it means that the motor is under stress and needs to be checked.
 
 #### Remote Alert - Telegram Notifications
-A cloud-based notification system that delivers real-time alerts to maintenance teams via Telegram messaging platform.
+A cloud-based notification system that delivers real-time alerts via Telegram messaging platform. Unlike the local alert, this alert is sent to a group of maintenance operators to notify them of the motor failure. Even if they are not on-site or looking at the dashboard, they can still be notified of the motor failure and take necessary actions.
 
 **Configuration:**
 - **Bot Setup**: Created via Telegram's @BotFather to obtain API token
-- **Group Chat Integration**: Bot added to a dedicated maintenance group to enable team-wide alerts
+- **Group Chat Integration**: Bot added to a maintenance group to enable team-wide alerts
 - **Alert Threshold**: Automatically triggered when failure probability exceeds **80%**
-- **Deployment**: Token and Chat ID securely stored as environment variables in Cloud Run (`env.yaml`)
+- **Deployment**: The triggering logic is deployed on the cloud run instance.
 
 **Alert Message Format:**
 ```
@@ -215,10 +216,10 @@ Since inducing catastrophic failure in a small prototype motor is difficult and 
 4.  **Stall**: Zero or low RPM with rising temperature.
 
 #### Model Selection & Logic
-*   **Model Architecture**: A **RandomForestClassifier** from scikit-learn [9] was chosen for its ability to capture complex, non-linear relationships between features (e.g., how high temperature might be sustainable at high RPM but critical at low RPM).
+*   **Model Architecture**: A **RandomForestClassifier** from scikit-learn [7] was chosen for its ability to capture complex, non-linear relationships between features (e.g., how high temperature might be sustainable at high RPM but critical at low RPM).
 *   **Reason for Choice**: Unlike linear models, Random Forest is robust against unscaled data and handles the interaction between vibration, temperature, and RPM more effectively without extensive feature engineering.
 *   **Configuration**: The model is configured with `n_estimators=300` trees to ensure stability and reduce overfitting, with `random_state=42` for reproducibility.
-*   **Deployment**: The model is serialized using Python's `pickle` module and loaded into the FastAPI [10] container on Cloud Run, enabling sub-second inference times.
+*   **Deployment**: The model is serialized using Python's `pickle` module and loaded into the FastAPI [8] container on Cloud Run, enabling sub-second inference times.
 *   **Inference Flow**: `Input Vector [Temp, Vib_RMS, RPM]` → `Random Forest Ensemble` → `Failure Probability`.
 
 ### 3.2 Cloud Implementation
@@ -267,28 +268,18 @@ Firebase Hosting is used to serve the web dashboard (HTML/CSS/JS).
 
 ## 5.0 References
 
-[1] S. Nandi, H. A. Toliyat and X. Li, "Condition Monitoring and Fault Diagnosis of Electrical Machines—A Review," IEEE Transactions on Energy Conversion, vol. 20, no. 4, pp. 719-729, Dec. 2005. [Online]. Available: https://ieeexplore.ieee.org/document/1542306
+[1] O. V. Thorsen and M. Dalva, "Failure identification and analysis for high voltage induction motors in petrochemical industry," *IEEE Trans. Ind. Appl.*, vol. 35, no. 4, pp. 810–818, Jul. 1999. [Online]. Available: https://www.academia.edu/47839890/Failure_identification_and_analysis_for_high_voltage_induction_motors_in_the_petrochemical_industry.
 
-[2] J. Z. Sikorska, M. Hodkiewicz and L. Ma, "Prognostic modelling options for remaining useful life estimation by industry," Mechanical Systems and Signal Processing, vol. 25, no. 5, pp. 1803-1836, 2011. [Online]. Available: https://doi.org/10.1016/j.ymssp.2010.11.018
+[2] United Nations, "Goal 9: Build resilient infrastructure, promote inclusive and sustainable industrialization and foster innovation," *Sustainable Development Goals*. [Online]. Available: https://sdgs.un.org/goals/goal9. [Accessed: 21-Dec-2025].
 
-[3] UN Department of Economic and Social Affairs, "Goal 9 | Department of Economic and Social Affairs," United Nations, 2024. [Online]. Available: https://sdgs.un.org/goals/goal9
+[3] Espressif Systems, "ESP32 Series Datasheet," ver. 4.3, 2024. [Online]. Available: https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf.
 
-[4] Espressif Systems, "ESP32 Series Datasheet," Version 4.0, 2023. [Online]. Available: https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf
+[4] Maxim Integrated, "DS18B20 Programmable Resolution 1-Wire Digital Thermometer Datasheet," Aug. 2019. [Online]. Available: https://datasheets.maximintegrated.com/en/ds/DS18B20.pdf.
 
-[5] Google Cloud, "Cloud Run Documentation - Serverless Container Platform," Google LLC, 2024. [Online]. Available: https://cloud.google.com/run/docs
+[5] InvenSense, "MPU-6000 and MPU-6050 Product Specification," rev. 3.4, Aug. 2013. [Online]. Available: https://invensense.tdk.com/wp-content/uploads/2015/02/MPU-6000-Datasheet1.pdf.
 
-[6] Analog Devices (Maxim Integrated), "DS18B20 Programmable Resolution 1-Wire Digital Thermometer," Datasheet, Rev. 7, 2019. [Online]. Available: https://www.analog.com/media/en/technical-documentation/data-sheets/DS18B20.pdf
+[6] Vishay Semiconductors, "TCRT5000, TCRT5000L: Reflective Optical Sensor with Transistor Output," Jun. 2023. [Online]. Available: https://www.vishay.com/docs/83760/tcrt5000.pdf.
 
-[7] TDK InvenSense, "MPU-6000 and MPU-6050 Product Specification," Revision 3.4, 2013. [Online]. Available: https://invensense.tdk.com/wp-content/uploads/2015/02/MPU-6000-Datasheet1.pdf
+[7] F. Pedregosa *et al.*, "Scikit-learn: Machine Learning in Python," *J. Mach. Learn. Res.*, vol. 12, pp. 2825–2830, 2011. [Online]. Available: https://www.jmlr.org/papers/volume12/pedregosa11a/pedregosa11a.pdf.
 
-[8] Vishay Semiconductors, "TCRT5000, TCRT5000L - Reflective Optical Sensor with Transistor Output," Document Number: 83751, Rev. 1.9, 2019. [Online]. Available: https://www.vishay.com/docs/83760/tcrt5000.pdf
-
-[9] F. Pedregosa et al., "Scikit-learn: Machine Learning in Python," _Journal of Machine Learning Research_, vol. 12, pp. 2825–2830, 2011.
-
-[10] S. Ramirez, "FastAPI framework, high performance, easy to learn, fast to code, ready for production," 2024. [Online]. Available: https://fastapi.tiangolo.com/
-
-[11] Google Firebase, "Firebase Documentation - Build and Run Apps," Google LLC, 2024. [Online]. Available: https://firebase.google.com/docs
-
-[12] Chart.js Contributors, "Chart.js - Simple yet flexible JavaScript charting library," Version 4.4, 2024. [Online]. Available: https://www.chartjs.org/
-
-[13] Google Cloud, "Firestore Documentation - NoSQL Document Database," Google LLC, 2024. [Online]. Available: https://cloud.google.com/firestore/docs
+[8] S. Ramírez, "FastAPI," 2018. [Online]. Available: https://fastapi.tiangolo.com.
