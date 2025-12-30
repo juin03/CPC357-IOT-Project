@@ -104,11 +104,10 @@ By aggregating these values into a lightweight JSON payload, the system minimize
 A simple piezoelectric buzzer connected to a GPIO pin. It provides immediate audible feedback to on-site personnel when the cloud API returns a "High Risk" status (>80% failure probability), ensuring safety even if the dashboard is not being watched to alert the onsite operators.
 
 #### Local Alert - Status LEDs
-Three colored LEDs provide a visual indication of the real-time motor health status based on the failure probability calculated by the model:
-*   **Green LED (Healthy)**: Indicates normal operation (Probability < 31%).
-*   **Yellow LED (Warning)**: Indicates potential issues or accumulating stress (Probability 31% – 79%).
+Two colored LEDs provide a visual indication of the real-time motor health status based on the failure probability calculated by the model:
+*   **Green LED (Healthy)**: Indicates normal operation (Probability ≤ 80%).
 *   **Red LED (Critical Failure)**: Indicates high failure probability (> 80%), synchronized with the buzzer alert.
-This is to give immediate feedback to the onsite operators to prevent any potential damage to the motor, for instance when the led light is yellow for a period of time, it means that the motor is under stress and needs to be checked.
+This is to give immediate feedback to the onsite operators to prevent any potential damage to the motor.
 
 #### Remote Alert - Telegram Notifications
 A cloud-based notification system that delivers real-time alerts via Telegram messaging platform. Unlike the local alert, this alert is sent to a group of maintenance operators to notify them of the motor failure. Even if they are not on-site or looking at the dashboard, they can still be notified of the motor failure and take necessary actions.
@@ -117,7 +116,7 @@ A cloud-based notification system that delivers real-time alerts via Telegram me
 - **Bot Setup**: Created via Telegram's @BotFather to obtain API token
 - **Group Chat Integration**: Bot added to a maintenance group to enable team-wide alerts
 - **Alert Threshold**: Automatically triggered when failure probability exceeds **80%**
-- **Deployment**: The triggering logic is deployed on the cloud run instance.
+- **Deployment**: The triggering logic is deployed on the Google Cloud VM instance.
 
 **Alert Message Format:**
 ```
@@ -219,7 +218,7 @@ Since inducing catastrophic failure in a small prototype motor is difficult and 
 *   **Model Architecture**: A **RandomForestClassifier** from scikit-learn [7] was chosen for its ability to capture complex, non-linear relationships between features (e.g., how high temperature might be sustainable at high RPM but critical at low RPM).
 *   **Reason for Choice**: Unlike linear models, Random Forest is robust against unscaled data and handles the interaction between vibration, temperature, and RPM more effectively without extensive feature engineering.
 *   **Configuration**: The model is configured with `n_estimators=300` trees to ensure stability and reduce overfitting, with `random_state=42` for reproducibility.
-*   **Deployment**: The model is serialized using Python's `pickle` module and loaded into the FastAPI [8] container on Cloud Run, enabling sub-second inference times.
+*   **Deployment**: The model is serialized using Python's `pickle` module and loaded into the Python subscriber service running on the Google Cloud VM, enabling sub-second inference times.
 *   **Inference Flow**: `Input Vector [Temp, Vib_RMS, RPM]` → `Random Forest Ensemble` → `Failure Probability`.
 
 ### 3.2 Cloud Implementation
@@ -281,5 +280,3 @@ Firebase Hosting is used to serve the web dashboard (HTML/CSS/JS).
 [6] Vishay Semiconductors, "TCRT5000, TCRT5000L: Reflective Optical Sensor with Transistor Output," Jun. 2023. [Online]. Available: https://www.vishay.com/docs/83760/tcrt5000.pdf.
 
 [7] F. Pedregosa *et al.*, "Scikit-learn: Machine Learning in Python," *J. Mach. Learn. Res.*, vol. 12, pp. 2825–2830, 2011. [Online]. Available: https://www.jmlr.org/papers/volume12/pedregosa11a/pedregosa11a.pdf.
-
-[8] S. Ramírez, "FastAPI," 2018. [Online]. Available: https://fastapi.tiangolo.com.
