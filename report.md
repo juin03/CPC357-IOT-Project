@@ -150,7 +150,7 @@ graph TB
         S3["TCRT5000<br/>RPM Sensor"]
         ESP["ESP32<br/>Microcontroller"]
         BUZ["Buzzer<br/>Local Alert"]
-        LED["LEDs<br/>(G/Y/R)"]
+        LED["LEDs<br/>(Green/Red)"]
     end
     
     subgraph Cloud["Cloud Layer - Google Compute Engine"]
@@ -169,13 +169,13 @@ graph TB
     S2 -->|"I2C"| ESP
     S3 -->|"Digital Pulse"| ESP
     
-    ESP -->|"MQTT Publish<br/>motor/health/data"| MQTT
+    ESP <-->|"MQTT Pub/Sub"| MQTT
     MQTT -->|"Subscribe"| SUB
     SUB -->|"Failure Probability"| FS
     
     SUB -->|"Store sensor_data"| FS
     SUB -->|"Store predictions"| FS
-    SUB -->|"Prob > 70%"| TG
+    SUB -->|"Prob > 80%"| TG
     
     ESP -.->|"Local Logic"| BUZ
     ESP -.->|"Local Logic"| LED
