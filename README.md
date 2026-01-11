@@ -57,6 +57,17 @@ The ESP32 publishes sensor data to the MQTT broker:
 
 ---
 
+## 🤖 Telegram Bot Configuration
+
+The system provides real-time remote alerts via a Telegram bot. Follow these steps to configure:
+
+1.  **Bot Setup**: Message [@BotFather](https://t.me/botfather) on Telegram and use `/newbot` to create your bot and obtain the **API Token**.
+2.  **Group Chat Integration**: Add your bot to a maintenance or operations group chat to enable team-wide alerts.
+3.  **Alert Threshold**: The system is pre-configured to automatically trigger a notification when the motor failure probability exceeds **80%**.
+4.  **Deployment**: The triggering logic is integrated into the MQTT subscriber service deployed on the **Google Cloud VM instance**.
+
+For environment variable setup (`TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`), see [`cloud/README.md`](cloud/README.md).
+
 ## 🔧 Development
 
 ### Cloud Layer
