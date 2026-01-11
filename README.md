@@ -6,6 +6,14 @@ IoT-based predictive maintenance system for industrial motors using ESP32, Rando
 
 ---
 
+## 📚 Documentation
+
+- **This Guide**: [`README.md`](README.md) - Quick start guide, architecture overview, and project structure.
+- **Cloud Layer**: See [`cloud/README.md`](cloud/README.md) - MQTT setup, ML model, VM deployment.
+- **Dashboard**: See [`dashboard/README.md`](dashboard/README.md) - Features, Firebase setup, UI components.
+
+---
+
 ## 📁 Project Structure
 
 ```
@@ -62,14 +70,6 @@ cd cloud
 cd dashboard
 # See dashboard/README.md for features and deployment
 ```
-
----
-
-## 📚 Documentation
-
-- **Technical Report**: Detailed architecture, SDG impact, and methodology.
-- **Cloud Layer**: See [`cloud/README.md`](cloud/README.md) - MQTT setup, ML model, VM deployment.
-- **Dashboard**: See [`dashboard/README.md`](dashboard/README.md) - Features, Firebase setup, UI components.
 
 ---
 
