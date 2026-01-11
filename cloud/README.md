@@ -1,267 +1,95 @@
-# Smart City Motor Health Monitoring System
+# Cloud Intelligence Layer (MQTT & ML)
 
-IoT system for predictive maintenance of factory motors using ESP32, Machine Learning, and Google Cloud Platform.
+IoT backend for predictive maintenance of industrial motors using MQTT communication, Random Forest Machine Learning, and Google Compute Engine.
 
 ## Architecture
 
 ```
-ESP32 (Sensors) → Cloud Run (ML API) → Firestore (Database)
+ESP32 (Sensors) → MQTT Broker (Mosquitto) → Python Subscriber (ML) → Firestore (Database)
 ```
 
 ## Project Structure
 
 ```
 .
-├── main.py                      # FastAPI application with ML inference
-├── Dockerfile                   # Container configuration
+├── mqtt_subscriber.py           # Main service for MQTT message handling & ML inference
 ├── requirements.txt             # Python dependencies
 ├── ml-model/
-│   ├── train_model.py          # Model training script
-│   └── motor_model.pkl         # Trained logistic regression model
-├── test_cloud.py               # API testing with 20 diverse test cases
-├── .env                        # Local environment variables (Cloud Run URL)
+│   ├── train_model.py          # Model training script using Random Forest
+│   └── motor_model.pkl         # Trained Random Forest model
+├── vm_setup_guide.md           # Step-by-step guide for GCE VM setup
+├── test_mqtt_publisher.py      # Local script to simulate ESP32 publishing
 ├── .env.example                # Environment variables template
-├── env.yaml                    # Cloud Run environment variables (gitignored)
-├── env.yaml.example            # Template for env.yaml
 └── README.md
 ```
 
 ## Telegram Notifications
 
-The system sends real-time alerts to a Telegram Group when the motor failure probability exceeds **70%**.
+The system sends real-time alerts to a Telegram Group when the motor failure probability exceeds **80%**.
 
 ### Configuration
-You need to set the following environment variables:
-- `TELEGRAM_BOT_TOKEN`: The API Token from @BotFather
-- `TELEGRAM_CHAT_ID`: The ID of the Telegram Group
+Required environment variables (set on VM):
+- `TELEGRAM_BOT_TOKEN`: API Token from @BotFather
+- `TELEGRAM_CHAT_ID`: ID of the Telegram Group/Chat
 
-## Setup & Deployment
+## Setup & Deployment (Google Compute Engine)
 
-### Prerequisites
+### 1. VM Provisioning
+The backend is hosted on a Google Cloud VM (`e2-micro`, Debian 11).
+- **Firewall Rules**: Open ports 80, 443, and **1883** (MQTT).
 
-- Python 3.10+
-- Google Cloud SDK
-- GCP Project with Firestore enabled
+### 2. Mosquitto Broker Setup
+Install and configure Mosquitto as the central MQTT broker on the VM.
+See [`vm_setup_guide.md`](vm_setup_guide.md) for detailed commands.
 
-### 1. Install Dependencies (Local Development)
+### 3. Subscriber Service Installation
+1. Clone repository to VM.
+2. Install Python dependencies: `pip install -r requirements.txt`.
+3. Run the subscriber: `python mqtt_subscriber.py`.
 
-```powershell
-# Create virtual environment
-python -m venv venv
+## Machine Learning Model
 
-# Activate virtual environment
-venv\Scripts\activate
+- **Algorithm**: **Random Forest Classifier**
+- **Features**: Temperature (°C), Vibration (RMS), and RPM.
+- **Inference**: Sub-second execution for real-time failure probability calculation.
 
-# Install packages
-pip install -r requirements.txt
-```
+## ESP32 Integration (MQTT)
 
-### 2. Train the ML Model
-
-```powershell
-cd ml-model
-python train_model.py
-```
-
-This creates `motor_model.pkl` with a trained logistic regression model.
-
-### 3. Authenticate with Google Cloud
-
-```powershell
-# Login to your Google account
-gcloud auth login
-
-# Set your project ID
-gcloud config set project YOUR_PROJECT_ID
-
-# Enable required APIs
-gcloud services enable cloudbuild.googleapis.com run.googleapis.com artifactregistry.googleapis.com
-```
-
-### 4. Grant Permissions (First Time Only)
-
-```powershell
-# Get your project number
-gcloud projects describe YOUR_PROJECT_ID --format="value(projectNumber)"
-
-# Grant Cloud Build permissions (replace PROJECT_NUMBER)
-gcloud projects add-iam-policy-binding YOUR_PROJECT_ID --member="serviceAccount:PROJECT_NUMBER-compute@developer.gserviceaccount.com" --role="roles/cloudbuild.builds.builder"
-
-gcloud projects add-iam-policy-binding YOUR_PROJECT_ID --member="serviceAccount:PROJECT_NUMBER-compute@developer.gserviceaccount.com" --role="roles/storage.admin"
-
-gcloud projects add-iam-policy-binding YOUR_PROJECT_ID --member="serviceAccount:PROJECT_NUMBER-compute@developer.gserviceaccount.com" --role="roles/artifactregistry.writer"
-```
-
-### 5. Configure Environment Variables
-
-Create `env.yaml` for Cloud Run deployment:
-
-```powershell
-# Copy the template
-cp env.yaml.example env.yaml
-
-# Edit env.yaml with your credentials
-# TELEGRAM_BOT_TOKEN: "your_bot_token_from_botfather"
-# TELEGRAM_CHAT_ID: "your_group_chat_id"
-```
-
-> ⚠️ **Important**: `env.yaml` is gitignored. Never commit it to version control.
-
-### 6. Deploy to Cloud Run
-
-```powershell
-gcloud run deploy motor-health-api `
-  --source . `
-  --region asia-southeast1 `
-  --allow-unauthenticated `
-  --platform managed `
-  --env-vars-file env.yaml
-```
-
-This command will:
-- Build the Docker container
-- Push to Artifact Registry
-- Deploy to Cloud Run
-- Return a public HTTPS URL
-
-### 7. Test the Deployment
-
-```powershell
-# Test health check
-curl https://YOUR-SERVICE-URL/ -UseBasicParsing
-
-# Run comprehensive tests (sends 20 diverse test cases)
-python test_cloud.py
-```
-
-**What `test_cloud.py` does:**
-- Generates 20 test cases with varying sensor values
-- Mix of normal (35%), medium risk (35%), and high risk (30%) conditions
-- Sends requests to your Cloud Run API
-- Displays failure probability for each test
-- Shows statistics: min/max/average risk levels
-- Populates Firestore with sample data for dashboard testing
-
-**Example output:**
-```
-📊 Test 1: temp=32.4°C, vib=0.028, rpm=1523 → ✓ 0.0% [LOW]
-📊 Test 2: temp=48.7°C, vib=0.065, rpm=1389 → ✓ 45.3% [MED]
-📊 Test 3: temp=67.2°C, vib=0.112, rpm=1287 → ✓ 99.8% [HIGH]
-...
-✅ Completed 20/20 requests
-📈 Probability range: 0.0% - 100.0%
-📊 Average risk: 42.5%
-```
-
-## API Endpoints
-
-### `GET /`
-Health check endpoint.
-
-**Response:**
-```json
-{
-  "status": "ok",
-  "message": "Motor Health API is running",
-  "model": "trained_logistic_regression"
-}
-```
-
-### `POST /predict`
-Predict motor failure probability.
-
-**Request:**
-```json
-{
-  "temperature": 35.5,
-  "vibration": 0.03,
-  "rpm": 1500,
-  "timestamp": 1734268800
-}
-```
-
-**Response:**
-```json
-{
-  "failure_probability": 0.0234
-}
-```
-
-## ESP32 Integration
-
-Use the Cloud Run service URL in your ESP32 code:
+The ESP32 publishes to the `motor/sensor_data` topic:
 
 ```cpp
-const char* serverUrl = "https://YOUR-SERVICE-URL/predict";
-
-// Send POST request with JSON body
-HTTPClient http;
-http.begin(serverUrl);
-http.addHeader("Content-Type", "application/json");
-
-String jsonPayload = "{\"temperature\":" + String(temp) + 
-                     ",\"vibration\":" + String(vib) + 
-                     ",\"rpm\":" + String(rpm) + 
-                     ",\"timestamp\":" + String(timestamp) + "}";
-
-int httpCode = http.POST(jsonPayload);
+// Example payload
+{
+  "temperature": 38.5,
+  "vibration_rms": 0.045,
+  "rpm": 1450
+}
 ```
 
 ## Firestore Collections
 
 ### `sensor_data`
-Stores raw sensor readings:
-- `temperature` (float)
-- `vibration` (float)
-- `rpm` (float)
-- `timestamp` (datetime)
+- `temperature` (number)
+- `vibration` (number)
+- `rpm` (number)
+- `timestamp` (server timestamp)
 
 ### `predictions`
-Stores ML predictions with link to sensor data:
-- `sensor_data_id` (string) - References the `sensor_data` document ID
-- `failure_probability` (float, 0.0-1.0)
-- `timestamp` (datetime)
+- `sensor_data_id` (reference)
+- `failure_probability` (0.0 - 1.0)
+- `timestamp` (server timestamp)
 
 ## Monitoring
 
-View live data in Firestore Console:
-```
-https://console.cloud.google.com/firestore/databases/-default-/data/panel?project=YOUR_PROJECT_ID
-```
-
-View Cloud Run logs:
-```powershell
-gcloud run logs read motor-health-api --region asia-southeast1
-```
-
-## Update Deployment
-
-After making code changes:
-
-```powershell
-gcloud run deploy motor-health-api `
-  --source . `
-  --region asia-southeast1 `
-  --allow-unauthenticated `
-  --platform managed `
-  --env-vars-file env.yaml
-```
-
-## Clean Up
-
-Delete the Cloud Run service:
-```powershell
-gcloud run services delete motor-health-api --region asia-southeast1
+View logs on the VM:
+```bash
+journalctl -u motor-health-subscriber -f
 ```
 
 ## Technology Stack
 
-- **Hardware:** ESP32, DS18B20, MPU6050, IR Sensor
-- **ML Framework:** scikit-learn (Logistic Regression)
-- **API Framework:** FastAPI, Uvicorn
-- **Cloud Platform:** Google Cloud Run, Firestore
-- **Container:** Docker
-
-## License
-
-MIT License
+- **ML Framework:** scikit-learn (Random Forest)
+- **Protocol:** MQTT (Mosquitto)
+- **Runtime:** Python 3.10
+- **Cloud Platform:** Google Compute Engine, Firestore
+- **Alerts:** Telegram Bot API

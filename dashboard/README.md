@@ -70,7 +70,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
     match /{document=**} {
       allow read: if true;        // Public read access for dashboard
-      allow write: if false;      // Only Cloud Run API can write
+      allow write: if false;      // Only MQTT Subscriber can write
       allow delete: if true;      // Allow dashboard to delete data
     }
   }
@@ -138,13 +138,13 @@ Changes are live immediately!
 ## Architecture
 
 ```
-ESP32 → Cloud Run API → Firestore Database
-                            ↓
-                     Dashboard (reads)
+ESP32 → MQTT Broker → Subscriber (ML) → Firestore Database
+                                            ↓
+                                     Dashboard (reads)
 ```
 
-- **ESP32** sends sensor data to Cloud Run API
-- **Cloud Run** processes data with ML model and stores in Firestore
+- **ESP32** sends sensor data to MQTT Broker
+- **MQTT Subscriber** processes data with ML model and stores in Firestore
 - **Dashboard** reads from Firestore in real-time (no API calls needed)
 
 ---
@@ -311,9 +311,9 @@ firebase hosting:rollback
 
 ### ❌ No data showing
 **Solution:**
-- Verify ESP32 is sending data to Cloud Run
-- Check Firestore Console for data in collections
-- Test Cloud Run API: `curl https://motor-health-api-250203692178.asia-southeast1.run.app/`
+- Verify ESP32 is publishing to MQTT Broker
+- Check VM logs for subscriber activity: `journalctl -u motor-health-subscriber`
+- Test MQTT Broker connectivity from your machine
 
 ### ❌ Clear All Data button not working
 **Solution:**
@@ -364,47 +364,8 @@ npx serve
 ## Security
 
 - ✅ **Read-only access** for public users
-- ✅ **Write access** only from Cloud Run (authenticated)
+- ✅ **Write access** only from VM Subscriber (authenticated)
 - ✅ **HTTPS only** (automatic SSL certificate)
 - ✅ **API keys** are public-safe (scoped to domain)
 
 ---
-
-## Future Enhancements
-
-- [x] Chart.js for historical graphs ✅
-- [x] Enhanced table UI with sensor data ✅
-- [x] Search and filter functionality ✅
-- [x] Clear all data feature ✅
-- [ ] Email/SMS alerts for high risk predictions
-- [ ] Export data to CSV
-- [ ] User authentication (Firebase Auth)
-- [ ] Dark mode toggle
-- [ ] Mobile app version (PWA)
-- [ ] Customizable alert thresholds
-- [ ] Data analytics dashboard
-
----
-
-## Support
-
-- **Firebase Console**: https://console.firebase.google.com/project/iot-project-481405
-- **Cloud Run API**: https://motor-health-api-250203692178.asia-southeast1.run.app
-- **Firestore Database**: https://console.firebase.google.com/project/iot-project-481405/firestore
-
----
-
-## License
-
-MIT License
-
----
-
-## Project Context
-
-Part of **Smart City Motor Health Monitoring System** (UN SDG 11 - Sustainable Cities and Communities)
-
-- **Backend**: Cloud Run API with ML inference
-- **Database**: Firestore real-time database
-- **Frontend**: This dashboard
-- **Hardware**: ESP32 with temperature, vibration, and RPM sensors
